@@ -9,7 +9,7 @@ return
 
         if br.player[id].storedData.aura > 0 then
             local aura = br.config.auras[br.player[id].storedData.aura]
-            br.player[id].auraImage = image('gfx/sprites/flare4.bmp', 0, 0, 100 + id)
+            br.player[id].auraImage = image(br.config.auraImage, 0, 0, 100 + id)
             imageblend(br.player[id].auraImage, 1)
             imagecolor(br.player[id].auraImage, aura[2], aura[3], aura[4])
         end
@@ -78,20 +78,19 @@ return
 
         br.gracePeriodTimer = br.config.gracePeriodSeconds
 
+        local sx, sy
         repeat
-            br.areaCenter = {math.random(0, map 'xsize'),  math.random(0, map 'ysize')}
-        until br.funcs.game.checkIfSpawnable(br.areaCenter[1], br.areaCenter[2])
+            sx = math.random(0, map 'xsize')
+            sy = math.random(0, map 'ysize')
+        until br.funcs.game.checkIfSpawnable(sx, sy)
 
-        br.areaRadius = (map 'xsize' > map 'ysize' and map 'xsize' or map 'ysize') * 32
-        br.areaCircleImage = br.funcs.geometry.drawCircle(
-            br.areaCenter[1] * 32 + 16,
-            br.areaCenter[2] * 32 + 16,
-            br.areaRadius,
-            32,
-            3,
-            0.5,
-            {255, 0, 0}
+        br.safeZone = br.funcs.geometry.drawZone(
+            sx * 32 + 16,
+            sy * 32 + 16,
+            (map 'xsize' > map 'ysize' and map 'xsize' or map 'ysize') * 32,
+            0.35
         )
+        br.shrinkStarted = false
 
         for _, pl in pairs(player(0, 'table')) do
             if br.player[pl].inGame then
@@ -108,7 +107,7 @@ return
                 
                 if br.player[pl].storedData.aura > 0 then
                     local aura = br.config.auras[br.player[pl].storedData.aura]
-                    br.player[pl].auraImage = image('gfx/sprites/flare4.bmp', 0, 0, 100 + pl)
+                    br.player[pl].auraImage = image(br.config.auraImage, 0, 0, 100 + pl)
                     imageblend(br.player[pl].auraImage, 1)
                     imagecolor(br.player[pl].auraImage, aura[2], aura[3], aura[4])
                 end
@@ -125,7 +124,7 @@ return
             br.funcs.player.updatePlayerHudTexts(killer)
         end
 
-        parse('sv_sound "battle_royale/ds.ogg"')
+        parse('sv_sound "' .. br.config.killSoundFile .. '"')
         br.funcs.player.updatePlayerHudTexts(victim)
         br.funcs.game.checkIfEnded()
         br.funcs.game.updateGlobalHudTexts()
@@ -140,8 +139,8 @@ return
 
         for _, pl in pairs(player(0, 'tableliving')) do
             local x, y, health = player(pl, 'x'), player(pl, 'y'), player(pl, 'health')
-            if br.funcs.geometry.distance(x, y, br.areaCenter[1] * 32 + 16, br.areaCenter[2] * 32 + 16) 
-                > br.areaRadius then
+            if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y) 
+                > br.funcs.geometry.getZoneRadius(br.safeZone) then
                 parse('explosion ' .. x .. ' ' .. y .. ' 3 0')
                 if health - br.config.dangerAreaDamage > 0 then
                     parse('sethealth ' .. pl ..' ' .. health - br.config.dangerAreaDamage)
@@ -152,14 +151,10 @@ return
         end
         
         if br.gracePeriodTimer > 0 then return end
-
-        br.areaRadius = br.areaRadius - br.config.areaShrinkingSpeed
-        if br.areaRadius < br.config.finalAreaRadius * 32 then 
-            br.areaRadius = br.config.finalAreaRadius * 32
-        end
-
-        if br.areaCircleImage then
-            br.funcs.geometry.changeCircleRadius(br.areaCircleImage, br.areaRadius)
+        
+        if not br.shrinkStarted and br.safeZone then
+            br.shrinkStarted = true
+            br.funcs.geometry.shrinkZone(br.safeZone, br.config.finalAreaRadius * 32, br.config.areaShrinkingSpeed)
         end
     end,
 
@@ -258,7 +253,7 @@ return
             if button >= 1 and button <= 8 then
                 br.player[id].storedData.aura = button
                 local aura = br.config.auras[button]
-                br.player[id].auraImage = image('gfx/sprites/flare4.bmp', 0, 0, 100 + id)
+                br.player[id].auraImage = image(br.config.auraImage, 0, 0, 100 + id)
                 imageblend(br.player[id].auraImage, 1)
                 imagecolor(br.player[id].auraImage, aura[2], aura[3], aura[4])
             elseif button == 9 then

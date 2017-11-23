@@ -25,7 +25,7 @@ return
                     br.funcs.geometry.distance(x1, y1, x2, y2)
             local x, y = br.funcs.geometry.extendPosition(x1, y1, angle, distance / 2)
             imagepos(line, x, y, angle)
-            imagescale(line, 1, distance / 32)
+            imagescale(line, 1 / 32, distance / 32)
             imagealpha(line, alpha)
             imagecolor(line, unpack(color))
             return {
@@ -124,7 +124,62 @@ return
             for _, v in pairs(circle.lines) do
                 br.funcs.geometry.freeLine(v)
             end
-        end
+        end,
+
+        drawZone = function(x, y, radius, alpha)
+            local img = image(br.config.dangerZoneImage, x, y, 3)
+            imagescale(img, radius / 614, radius / 614)
+            imagealpha(img, alpha)
+
+            return {
+                x = x,
+                y = y,
+                radius = radius,
+                shrinking = false,
+                shrinkStart = 0,
+                shrinkEnd = 0,
+                shrinkFinalRadius = 0,
+                timerFunc = '',
+                image = img
+            }
+        end,
+
+        getZoneRadius = function(zone)
+            if zone.shrinking then
+                local starting, finishing = zone.radius, zone.shrinkFinalRadius
+                local timerStarted, timerNeeded = zone.shrinkStart, zone.shrinkEnd
+                local multiplier = ((os.clock() * 1000) - timerStarted) / timerNeeded
+                return starting + (finishing - starting) * multiplier
+            else
+                return zone.radius
+            end
+        end,
+
+        shrinkZone = function(zone, radius, speed)
+            local finalScale   = radius / 614
+            local currentScale = zone.radius / 614
+            local millisecs = (zone.radius - radius) / speed * 1000
+            tween_scale(zone.image, millisecs, finalScale, finalScale)
+
+            local timerFunc = '__shrinkTimer' .. tostring(os.clock()):gsub('%.', '')
+            _G[timerFunc] = function()
+                zone.shrinking = false
+                zone.shrinkStart = 0
+                zone.shrinkEnd = 0
+                zone.radius = zone.shrinkFinalRadius
+                zone.shrinkFinalRadius = 0
+
+                _G[timerFunc] = nil
+            end
+
+            timer(millisecs, timerFunc)
+
+            zone.shrinking = true
+            zone.shrinkStart = os.clock() * 1000
+            zone.shrinkEnd = millisecs
+            zone.shrinkFinalRadius = radius
+            zone.timerFunc = timerFunc
+        end,
     },
 
     game = {
@@ -306,7 +361,7 @@ return
         end,
 
         saveStoredData = function(id)
-            if br.player[id] and not br.player[id].loadedStoredData then return end
+            if not br.player[id] or not br.player[id].loadedStoredData then return end
 
             local steamid = player(id, 'steamid')
 
@@ -326,18 +381,20 @@ return
                     error('variables of type "' .. type(v) .. '" cannot be turned into a string', 2)
                 elseif type(k) == 'function' or type(k) == 'userdata' or type(k) == 'thread' or type(k) == 'table' then
                     error('variables of type "' .. type(k) .. '" cannot be used as keys in a stringified table', 2)
-                elseif type(v) == 'table' then
+                end
+
+                local key = (type(k) == 'string' and '["' .. k:gsub('([\\"])', '\\%1') .. '"]' or k)
+                if type(v) == 'table' then
                     local success, entry = pcall(br.funcs.table.toString, v)
                     if success then
-                        str = str .. k .. '=' .. entry .. ','
+                        str = str .. key .. '=' .. entry .. ','
                     else
                         error(entry, 2)
                     end
                 elseif type(v) == 'string' then
-                    local entry = v:gsub('([\\"])', '\\%1')
-                    str = str .. k .. '="' .. entry ..'",' 
+                    str = str .. key .. '="' .. v:gsub('([\\"])', '\\%1') ..'",' 
                 else
-                    str = str .. k .. '=' .. tostring(v) .. ','
+                    str = str .. key .. '=' .. tostring(v) .. ','
                 end
             end
 
@@ -356,6 +413,52 @@ return
             end
 
             return copy
+        end
+    },
+
+    string = {
+        trim = function(str)
+            return str:match('^%s*(.-)%s*$')
+        end
+    },
+
+    server = {
+        checkServertransfer = function()
+            local file = assert(
+                io.open('sys/servertransfer.lst', 'r'),
+                'failed to open \'servertransfer.lst\' file for reading'
+            )
+            local checkList = {}
+            for _, v in pairs(br.config.servertransfer) do
+                checkList[v] = false
+            end
+
+            for line in file:lines() do
+                local trimmed = br.funcs.string.trim(line)
+                if checkList[trimmed] ~= nil then
+                    checkList[trimmed] = true
+                end
+            end
+
+            file:close()
+            file = assert(
+                io.open('sys/servertransfer.lst', 'a'),
+                'failed to open \'servertransfer.lst\' file for appending'
+            )
+
+            local changed = false
+            for k, v in pairs(checkList) do
+                if not v then
+                    changed = true
+                    file:write(br.funcs.string.trim(k), '\n')
+                end
+            end
+
+            file:close()
+
+            if changed then
+                parse('changemap ' .. map 'name')
+            end
         end
     }
 }

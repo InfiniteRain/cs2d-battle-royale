@@ -1,9 +1,11 @@
 br = {
 	player           = {},
 	restarting       = false,
-	areaCenter       = {0, 0},
-	areaRadius       = 0,
-	areaCircleImage  = false,
+	--areaCenter       = {0, 0},
+	--areaRadius       = 0,
+	--areaCircleImage  = false,
+	safeZone         = false,
+	shrinkStarted    = false,
 	packages         = {},
     gracePeriodTimer = 0,
     roundEnded       = false,
@@ -25,3 +27,5 @@ end
 for i = 1, 32 do
 	br.player[i] = br.funcs.player.getStandardPlayerData()
 end
+
+br.funcs.server.checkServertransfer()
