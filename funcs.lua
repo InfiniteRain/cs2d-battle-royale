@@ -169,7 +169,7 @@ return
                     local text
                     if alivePlayers == 1 then
                         text = string.char(169) .. '000255000' .. lastAlivePlayerName .. ' has WON the game!@C'
-						br.funcs.player.addExp(lastAlivePlayerId, 350)
+						br.funcs.player.addExp(lastAlivePlayerId, 450)
                     elseif alivePlayers == 0 then
                         text = 'The game has ended in a DRAW!@C'
                     end
@@ -240,40 +240,20 @@ return
         getExpData = function(id)
             local sd = br.player[id].storedData
             local currentExp = sd.exp
-            local currentLevel = math.floor((sd.exp + 1) ^ (1 / 2.5))
-            local nextLevelExp = math.floor((currentLevel + 1) ^ 2.5)
-            local thisLevelExp = math.floor(currentLevel ^ 2.5) - 1
+            local currentLevel = math.floor(math.sqrt((sd.exp + 1) / 150))
+            local nextLevelExp = math.floor(((currentLevel + 1) ^ 2) * 150)
+            local thisLevelExp = math.floor((currentLevel ^ 2) * 150)
             local neededForNextLevel = nextLevelExp - thisLevelExp
             local progressNextLevel = currentExp - thisLevelExp
 
             return {
                 currentExp = currentExp,
-                currentLevel = currentLevel,
+                currentLevel = currentLevel + 1,
                 nextLevelExp = nextLevelExp,
                 thisLevelExp = thisLevelExp,
                 neededForNextLevel = neededForNextLevel,
                 progressNextLevel = progressNextLevel
             }
-        end,
-
-        getExpWorth = function(id)
-            local worth = 0
-            for _, v in pairs(playerweapons(id)) do
-                if v == 79 or v == 84 or v == 41 then
-                    worth = worth + 30
-                elseif v == 80 then
-                    worth = worth + 60
-                elseif v == 69 or v == 78 then
-                    worth = worth + 20
-                else
-                    worth = worth + itemtype(v, 'dmg')
-                end
-            end
-
-            worth = worth * 1.2
-            if worth < 50 then worth = 50 end
-            if worth > 200 then worth = 200 end
-            return math.floor(worth)
         end,
 
         addExp = function(id, exp)
@@ -284,10 +264,9 @@ return
 
             if oldExpData.currentLevel < newExpData.currentLevel then
                 local currentLevel = newExpData.currentLevel
-                local advancedLevels = currentLevel - oldExpData.currentLevel
                 msg(
-                    string.char(169) .. '000255000' .. player(id, 'name') .. ' had advanced ' .. advancedLevels 
-                            .. ' level(s)! They are now level ' .. currentLevel ..'!'
+                    string.char(169) .. '000255000' .. player(id, 'name') .. ' had advanced to level ' 
+                    .. currentLevel ..'!'
                 )
 
                 local x, y, health = player(id, 'x'), player(id, 'y'), player(id, 'health')

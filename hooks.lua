@@ -121,7 +121,7 @@ return
     die = function(victim, killer)
         br.player[victim].killed = true
         if killer > 0 and killer ~= victim then
-            br.funcs.player.addExp(killer, br.funcs.player.getExpWorth(victim))
+            br.funcs.player.addExp(killer, 150)
             br.funcs.player.updatePlayerHudTexts(killer)
         end
 
