@@ -131,7 +131,7 @@ return
             if br.gpTimerFrame == 9 then
                 imagepos(br.gpTimerFont, 425, 140, 0)
             end
-            
+
             if br.gpTimerFrame > 0 then
                 imageframe(br.gpTimerFont, br.gpTimerFrame)
                 imagescale(br.gpTimerFont, 2, 2)
@@ -157,6 +157,16 @@ return
                     parse('sethealth ' .. pl ..' ' .. health - br.config.dangerAreaDamage)
                 else
                     parse('customkill 0 "danger zone" ' .. pl)
+                end
+            end
+        end
+
+        for _, ob in pairs(object(0, 'table')) do
+            local x, y = object(ob, 'x'), object(ob, 'y')
+            if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y)
+                > br.funcs.geometry.getZoneRadius(br.safeZone) then
+                if object(ob, 'type') < 30 then
+                    parse('killobject ' .. ob)
                 end
             end
         end
@@ -215,7 +225,10 @@ return
 
     hit = function(victim, source)
         if br.gracePeriodTimer > 0 then
-            msg2(source, string.char(169) .. '255000000You cannot deal damage during the grace period!@C')
+            if source > 0 then
+                msg2(source, string.char(169) .. '255000000You cannot deal damage during the grace period!@C')
+            end 
+
             return 1
         end
     end,
