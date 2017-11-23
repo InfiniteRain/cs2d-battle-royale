@@ -1,14 +1,14 @@
 br = {
 	player           = {},
 	restarting       = false,
-	--areaCenter       = {0, 0},
-	--areaRadius       = 0,
-	--areaCircleImage  = false,
 	safeZone         = false,
 	shrinkStarted    = false,
 	packages         = {},
     gracePeriodTimer = 0,
-    roundEnded       = false,
+	roundEnded       = false,
+	
+	gpTimerFrame     = -1,
+	gpTimerFont      = false,
 
     config = loadfile('sys/lua/battle_royale/config.lua')(),
 	funcs = loadfile('sys/lua/battle_royale/funcs.lua')(),
@@ -29,3 +29,4 @@ for i = 1, 32 do
 end
 
 br.funcs.server.checkServertransfer()
+parse('sv_restart')

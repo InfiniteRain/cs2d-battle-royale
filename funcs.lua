@@ -223,15 +223,26 @@ return
                 if alivePlayers <= 1 then
                     local text
                     if alivePlayers == 1 then
-                        text = string.char(169) .. '000255000' .. lastAlivePlayerName .. ' has WON the game!@C'
-						br.funcs.player.addExp(lastAlivePlayerId, 450)
+                        text = lastAlivePlayerName .. ' has WON the game!'
+                        br.funcs.player.addExp(lastAlivePlayerId, 450)
+                        
+                        for i = 1, 5 do
+                            msg(
+                                string.char(169) .. 
+                                math.random(100, 255) ..
+                                math.random(100, 255) ..
+                                math.random(100, 255) ..
+                                text ..
+                                string.rep(' ', i) ..
+                                '@C'
+                            )
+                        end
                     elseif alivePlayers == 0 then
                         text = 'The game has ended in a DRAW!@C'
+                        msg(text)
                     end
                     
                     br.roundEnded = true
-
-                    msg(text)
                     parse('restart 5')
                 end
             end
@@ -331,6 +342,21 @@ return
             end
 
             br.funcs.player.updatePlayerHudTexts(id)
+        end,
+
+        updateAura = function(id)
+            if br.player[id].auraImage then
+                freeimage(br.player[id].auraImage)
+                br.player[id].auraImage = false
+            end
+
+            if br.player[id].storedData.aura > 0 then
+                local aura = br.config.auras[br.player[id].storedData.aura]
+                br.player[id].auraImage = image(br.config.auraImage, 0, 0, 100 + id)
+                imageblend(br.player[id].auraImage, 1)
+                imagecolor(br.player[id].auraImage, aura[2], aura[3], aura[4])
+                imagealpha(br.player[id].auraImage, 0.6)
+            end
         end,
 
         getStandardPlayerData = function()

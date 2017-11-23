@@ -5,14 +5,8 @@ return
         br.player[id] = br.funcs.player.getStandardPlayerData()
         br.funcs.player.loadStoredData(id)
         br.funcs.player.updatePlayerHudTexts(id)
+        br.funcs.player.updateAura(id)
         br.funcs.game.updateGlobalHudTexts()
-
-        if br.player[id].storedData.aura > 0 then
-            local aura = br.config.auras[br.player[id].storedData.aura]
-            br.player[id].auraImage = image(br.config.auraImage, 0, 0, 100 + id)
-            imageblend(br.player[id].auraImage, 1)
-            imagecolor(br.player[id].auraImage, aura[2], aura[3], aura[4])
-        end
     end,
 
     leave = function(id)
@@ -77,6 +71,8 @@ return
         end
 
         br.gracePeriodTimer = br.config.gracePeriodSeconds
+        br.gpTimerFrame     = br.config.gracePeriodSeconds > 9 and 9 or br.config.gracePeriodSeconds
+        br.gpTimerFont      = image('<spritesheet:gfx/br/fn.png:100:100:m>', -1000, -1000, 2)
 
         local sx, sy
         repeat
@@ -95,6 +91,7 @@ return
         for _, pl in pairs(player(0, 'table')) do
             if br.player[pl].inGame then
                 br.player[pl].killed = false
+                br.player[pl].auraImage = false
 
                 local spawnx, spawny
                 repeat
@@ -104,13 +101,7 @@ return
 
                 parse('spawnplayer ' .. pl .. ' ' .. spawnx * 32 + 16 .. ' ' .. spawny * 32 + 16)
                 br.funcs.player.updatePlayerHudTexts(pl)
-                
-                if br.player[pl].storedData.aura > 0 then
-                    local aura = br.config.auras[br.player[pl].storedData.aura]
-                    br.player[pl].auraImage = image(br.config.auraImage, 0, 0, 100 + pl)
-                    imageblend(br.player[pl].auraImage, 1)
-                    imagecolor(br.player[pl].auraImage, aura[2], aura[3], aura[4])
-                end
+                br.funcs.player.updateAura(pl)
             end
         end
 
@@ -135,6 +126,26 @@ return
         if br.gracePeriodTimer <= 0 then
             br.gracePeriodTimer = 0
         end
+
+        if br.gpTimerFrame == br.gracePeriodTimer then
+            if br.gpTimerFrame == 9 then
+                imagepos(br.gpTimerFont, 425, 140, 0)
+            end
+            
+            if br.gpTimerFrame > 0 then
+                imageframe(br.gpTimerFont, br.gpTimerFrame)
+                imagescale(br.gpTimerFont, 2, 2)
+                tween_scale(br.gpTimerFont, 900, 0.5, 0.5)
+                br.gpTimerFrame = br.gpTimerFrame - 1
+            else
+                imageframe(br.gpTimerFont, 11)
+                imagescale(br.gpTimerFont, 2, 2)
+                tween_alpha(br.gpTimerFont, 1500, 0)
+                tween_scale(br.gpTimerFont, 1500, 0.25, 0.25)
+                br.gpTimerFrame = br.gpTimerFrame - 1
+            end
+        end
+
         br.funcs.game.updateGlobalHudTexts()
 
         for _, pl in pairs(player(0, 'tableliving')) do
@@ -244,21 +255,12 @@ return
 
     menu = function(id, menu, button)
         if menu == 'Select aura' then
-            if button ~= 0 then
-                if br.player[id].auraImage ~= false then
-                    freeimage(br.player[id].auraImage)
-                end
-            end
-
             if button >= 1 and button <= 8 then
                 br.player[id].storedData.aura = button
-                local aura = br.config.auras[button]
-                br.player[id].auraImage = image(br.config.auraImage, 0, 0, 100 + id)
-                imageblend(br.player[id].auraImage, 1)
-                imagecolor(br.player[id].auraImage, aura[2], aura[3], aura[4])
+                br.funcs.player.updateAura(id)
             elseif button == 9 then
                 br.player[id].storedData.aura = 0
-                br.player[id].auraImage = false
+                br.funcs.player.updateAura(id)
             end
         end
     end
