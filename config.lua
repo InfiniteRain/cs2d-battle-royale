@@ -1,13 +1,13 @@
 return 
 
 {
-    gracePeriodSeconds = 15,
+    gracePeriodSeconds = 12,
     
     finalAreaRadius    = 10,
     areaShrinkingSpeed = 70,
     dangerAreaDamage   = 10,
 
-    dangerZoneImage    = 'gfx/br/dz.png',
+    dangerZoneImage    = 'gfx/br/dz2.png',
     fontImage          = 'gfx/be/fn.png',
     killSoundFile      = 'br/ds.ogg',
     auraImage          = 'gfx/sprites/flare4.bmp',
@@ -99,7 +99,7 @@ return
         'gfx/br/c3.png',
         'gfx/br/c4.png',
         'gfx/br/c5.png',
-        'gfx/br/dz.png',
+        'gfx/br/dz2.png',
         'gfx/br/fn.png',
         
         'sfx/br/ds.ogg'

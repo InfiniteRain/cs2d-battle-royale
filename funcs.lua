@@ -128,8 +128,7 @@ return
 
         drawZone = function(x, y, radius, alpha)
             local img = image(br.config.dangerZoneImage, x, y, 3)
-            imagescale(img, radius / 614, radius / 614)
-            imagealpha(img, alpha)
+            imagescale(img, radius / 307, radius / 307)
 
             return {
                 x = x,
@@ -156,8 +155,8 @@ return
         end,
 
         shrinkZone = function(zone, radius, speed)
-            local finalScale   = radius / 614
-            local currentScale = zone.radius / 614
+            local finalScale   = radius / 307
+            local currentScale = zone.radius / 307
             local millisecs = (zone.radius - radius) / speed * 1000
             tween_scale(zone.image, millisecs, finalScale, finalScale)
 

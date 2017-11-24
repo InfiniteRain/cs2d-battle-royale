@@ -148,25 +148,27 @@ return
 
         br.funcs.game.updateGlobalHudTexts()
 
-        for _, pl in pairs(player(0, 'tableliving')) do
-            local x, y, health = player(pl, 'x'), player(pl, 'y'), player(pl, 'health')
-            if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y) 
-                > br.funcs.geometry.getZoneRadius(br.safeZone) then
-                parse('explosion ' .. x .. ' ' .. y .. ' 3 0')
-                if health - br.config.dangerAreaDamage > 0 then
-                    parse('sethealth ' .. pl ..' ' .. health - br.config.dangerAreaDamage)
-                else
-                    parse('customkill 0 "danger zone" ' .. pl)
+        if br.safeZone then
+            for _, pl in pairs(player(0, 'tableliving')) do
+                local x, y, health = player(pl, 'x'), player(pl, 'y'), player(pl, 'health')
+                if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y) 
+                    > br.funcs.geometry.getZoneRadius(br.safeZone) then
+                    parse('explosion ' .. x .. ' ' .. y .. ' 3 0')
+                    if health - br.config.dangerAreaDamage > 0 then
+                        parse('sethealth ' .. pl ..' ' .. health - br.config.dangerAreaDamage)
+                    else
+                        parse('customkill 0 "danger zone" ' .. pl)
+                    end
                 end
             end
-        end
 
-        for _, ob in pairs(object(0, 'table')) do
-            local x, y = object(ob, 'x'), object(ob, 'y')
-            if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y)
-                > br.funcs.geometry.getZoneRadius(br.safeZone) then
-                if object(ob, 'type') < 30 then
-                    parse('killobject ' .. ob)
+            for _, ob in pairs(object(0, 'table')) do
+                local x, y = object(ob, 'x'), object(ob, 'y')
+                if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y)
+                    > br.funcs.geometry.getZoneRadius(br.safeZone) then
+                    if object(ob, 'type') < 30 then
+                        parse('killobject ' .. ob)
+                    end
                 end
             end
         end
