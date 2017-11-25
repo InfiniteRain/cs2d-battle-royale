@@ -242,6 +242,7 @@ return
                     end
                     
                     br.roundEnded = true
+                    parse('trigger draw')
                     parse('restart 5')
                 end
             end
