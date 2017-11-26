@@ -36,16 +36,16 @@ return
             br.player[id].inGame = false
         end
     end,
-	
-	startround_prespawn = function()
-		br.roundEnded = false
-		
-		for _, pl in pairs(player(0, 'table')) do
+    
+    startround_prespawn = function()
+        br.roundEnded = false
+        
+        for _, pl in pairs(player(0, 'table')) do
             if br.player[pl].inGame then
-                br.player[pl].killed = false		
-			end
-		end
-	end,
+                br.player[pl].killed = false        
+            end
+        end
+    end,
 
     startround = function()
         br.packages = {}
