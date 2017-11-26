@@ -215,9 +215,9 @@ return
                     if br.player[pl].inGame and not br.player[pl].killed then
                         alivePlayers = alivePlayers + 1
                         lastAlivePlayerName = player(pl, 'name')
-						lastAlivePlayerId = pl
+                        lastAlivePlayerId = pl
                     end
-                end		
+                end        
 
                 if alivePlayers <= 1 then
                     local text
@@ -264,7 +264,7 @@ return
             for _, pl in pairs(player(0, 'table')) do
                 if br.player[pl].inGame and not br.player[pl].killed then
                     alivePlayers = alivePlayers + 1
-                elseif br.player[pl].inGame and br.player[pl].killed then	
+                elseif br.player[pl].inGame and br.player[pl].killed then    
                     deadPlayers = deadPlayers + 1
                 else
                     specPlayers = specPlayers + 1
@@ -294,13 +294,13 @@ return
                         .. 'NOT be saved!'
                 parse('hudtxt2 ' .. id .. ' 4 "' .. warnText .. '" 415 415 1')
             end
-			
-			local killedText = ''
-			if br.player[id].inGame and br.player[id].killed then
-				killedText = string.char(169) .. '255000000You\'re DEAD. If you try to respawn, you will get '
+            
+            local killedText = ''
+            if br.player[id].inGame and br.player[id].killed then
+                killedText = string.char(169) .. '255000000You\'re DEAD. If you try to respawn, you will get '
                         .. 'instantly killed!'
-			end
-			parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
+            end
+            parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
         end,
 
         getExpData = function(id)
