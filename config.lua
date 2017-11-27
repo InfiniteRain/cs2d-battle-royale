@@ -76,11 +76,6 @@ return
         }
     },
 
-    playerStoredDataSchema = {
-        exp  = 0,
-        aura = 0
-    },
-
     auras = {
         {'Red'   , 255, 0  , 0  },
         {'Green' , 0  , 255, 0  },

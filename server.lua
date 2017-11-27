@@ -1,6 +1,5 @@
 br = {
     player           = {},
-    restarting       = false,
     safeZone         = false,
     shrinkStarted    = false,
     packages         = {},
@@ -10,10 +9,10 @@ br = {
     gpTimerFrame     = -1,
     gpTimerFont      = false,
 
-    config = loadfile('sys/lua/battle_royale/config.lua')(),
-    funcs = loadfile('sys/lua/battle_royale/funcs.lua')(),
-    hooks = loadfile('sys/lua/battle_royale/hooks.lua')(),
-    settings = loadfile('sys/lua/battle_royale/settings.lua')()
+    config = assert(loadfile('sys/lua/battle_royale/config.lua'))(),
+    funcs = assert(loadfile('sys/lua/battle_royale/funcs.lua'))(),
+    hooks = assert(loadfile('sys/lua/battle_royale/hooks.lua'))(),
+    settings =  assert(loadfile('sys/lua/battle_royale/settings.lua'))()
 }
 
 for hook, _ in pairs(br.hooks) do
@@ -21,11 +20,12 @@ for hook, _ in pairs(br.hooks) do
 end
 
 for setting, values in pairs(br.settings) do
-    parse(setting ..' '.. table.concat(values, ' '))
+    local vals = (type(values) ~= 'table' and {values} or values)
+    parse(setting ..' '.. table.concat(vals, ' '))
 end
 
 for i = 1, 32 do
-    br.player[i] = br.funcs.player.getStandardPlayerData()
+    br.player[i] = br.funcs.player.getDataSchema()
 end
 
 br.funcs.server.checkServertransfer()

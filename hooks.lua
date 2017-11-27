@@ -2,16 +2,16 @@ return
 
 {
     join = function(id)
-        br.player[id] = br.funcs.player.getStandardPlayerData()
+        br.player[id] = br.funcs.player.getDataSchema()
         br.funcs.player.loadStoredData(id)
-        br.funcs.player.updatePlayerHudTexts(id)
+        br.funcs.player.updateHudTexts(id)
         br.funcs.player.updateAura(id)
         br.funcs.game.updateGlobalHudTexts()
     end,
 
     leave = function(id)
         br.funcs.player.saveStoredData(id)
-        br.player[id] = br.funcs.player.getStandardPlayerData()
+        br.player[id] = br.funcs.player.getDataSchema()
         br.funcs.game.updateGlobalHudTexts()
         br.funcs.game.checkIfEnded()
     end,
@@ -20,7 +20,7 @@ return
         if player(id, 'team') == 0 and team > 0 then
             br.player[id].inGame = true
             br.player[id].killed = true
-            br.funcs.player.updatePlayerHudTexts(id)
+            br.funcs.player.updateHudTexts(id)
 
             local activePlayers = 0
             for _, pl in pairs(player(0, 'table')) do
@@ -100,7 +100,7 @@ return
                 until br.funcs.game.checkIfSpawnable(spawnx, spawny)
 
                 parse('spawnplayer ' .. pl .. ' ' .. spawnx * 32 + 16 .. ' ' .. spawny * 32 + 16)
-                br.funcs.player.updatePlayerHudTexts(pl)
+                br.funcs.player.updateHudTexts(pl)
                 br.funcs.player.updateAura(pl)
             end
         end
@@ -112,11 +112,11 @@ return
         br.player[victim].killed = true
         if killer > 0 and killer ~= victim then
             br.funcs.player.addExp(killer, 150)
-            br.funcs.player.updatePlayerHudTexts(killer)
+            br.funcs.player.updateHudTexts(killer)
         end
 
         parse('sv_sound "' .. br.config.killSoundFile .. '"')
-        br.funcs.player.updatePlayerHudTexts(victim)
+        br.funcs.player.updateHudTexts(victim)
         br.funcs.game.checkIfEnded()
         br.funcs.game.updateGlobalHudTexts()
     end,

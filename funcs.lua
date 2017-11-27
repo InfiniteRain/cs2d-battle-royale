@@ -1,6 +1,35 @@
 return 
 
 {
+    timer = {
+        init = function(time, func, ...)
+            local args = {...}
+            _G['TIMERS'] = _G['TIMERS'] or {}
+
+            local i, name = 0, ''
+            repeat
+                name = 't' .. i
+                i = i + 1
+            until _G['TIMERS'][name] == nil
+
+            _G['TIMERS'][name] = {
+                name = name,
+                func = function()
+                    func(unpack(args))
+                    _G['TIMERS'][name] = nil
+                end
+            }
+
+            timer(time, 'TIMERS.' .. name ..'.func')
+            return _G['TIMERS'][name]
+        end,
+
+        free = function(timer)
+            freetimer('TIMERS.' .. timer.name .. '.func')
+            _G['TIMERS'][timer.name] = nil
+        end
+    },
+
     geometry = {
         distance = function(x1, y1, x2, y2)
             return math.sqrt((y1 - y2)^2 + (x1 - x2)^2)
@@ -138,7 +167,7 @@ return
                 shrinkStart = 0,
                 shrinkEnd = 0,
                 shrinkFinalRadius = 0,
-                timerFunc = '',
+                timer = false,
                 image = img
             }
         end,
@@ -160,24 +189,18 @@ return
             local millisecs = (zone.radius - radius) / speed * 1000
             tween_scale(zone.image, millisecs, finalScale, finalScale)
 
-            local timerFunc = '__shrinkTimer' .. tostring(os.clock()):gsub('%.', '')
-            _G[timerFunc] = function()
+            zone.shrinking = true
+            zone.shrinkStart = os.clock() * 1000
+            zone.shrinkEnd = millisecs
+            zone.shrinkFinalRadius = radius
+            zone.timer = br.funcs.timer.init(millisecs, function() 
                 zone.shrinking = false
                 zone.shrinkStart = 0
                 zone.shrinkEnd = 0
                 zone.radius = zone.shrinkFinalRadius
                 zone.shrinkFinalRadius = 0
-
-                _G[timerFunc] = nil
-            end
-
-            timer(millisecs, timerFunc)
-
-            zone.shrinking = true
-            zone.shrinkStart = os.clock() * 1000
-            zone.shrinkEnd = millisecs
-            zone.shrinkFinalRadius = radius
-            zone.timerFunc = timerFunc
+                zone.timer = false
+            end)
         end,
     },
 
@@ -280,7 +303,7 @@ return
     },
 
     player = {
-        updatePlayerHudTexts = function(id)
+        updateHudTexts = function(id)
             local levelText
             local levelData = br.funcs.player.getExpData(id)
             
@@ -341,7 +364,7 @@ return
                 end
             end
 
-            br.funcs.player.updatePlayerHudTexts(id)
+            br.funcs.player.updateHudTexts(id)
         end,
 
         updateAura = function(id)
@@ -359,7 +382,7 @@ return
             end
         end,
 
-        getStandardPlayerData = function()
+        getDataSchema = function()
             return {
                 killed           = true,
                 inGame           = false,
@@ -369,10 +392,17 @@ return
             }
         end,
 
+        getStoredDataSchema = function()
+            return {
+                exp  = 0,
+                aura = 0
+            }
+        end,
+
         loadStoredData = function(id)
             local steamid = player(id, 'steamid')
             
-            br.player[id].storedData = br.funcs.table.copy(br.config.playerStoredDataSchema)
+            br.player[id].storedData = br.funcs.player.getStoredDataSchema()
             if steamid ~= '0' then
                 local success, loader = pcall(loadfile, 'sys/lua/battle_royale/storage/' .. steamid .. '.lua')
                 if success and loader ~= nil then
@@ -425,20 +455,6 @@ return
             end
 
             return str .. '}'
-        end,
-
-        copy = function(tbl)
-            local copy = {}
-            for k, v in pairs(tbl) do
-                if type(v) == 'table' then
-                    local entry = br.funcs.table.copy(v)
-                    copy[k] = entry
-                else
-                    copy[k] = v
-                end
-            end
-
-            return copy
         end
     },
 
