@@ -291,6 +291,8 @@ return
     end,
 
     say = function(id, message)
+        if message == 'rank' then return 0 end
+
         local role = br.config.roles[br.player[id].role]
         local c, r = string.char(169), '255000000'
 
