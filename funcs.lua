@@ -404,12 +404,14 @@ return
             
             br.player[id].storedData = br.funcs.player.getStoredDataSchema()
             if steamid ~= '0' then
-                local success, loader = pcall(loadfile, 'sys/lua/battle_royale/storage/' .. steamid .. '.lua')
-                if success and loader ~= nil then
-                    local data = loader()
+                local file = io.open('sys/lua/battle_royale/storage/' .. steamid .. '.lua', 'rb')
+                if file then
+                    local data = assert(loadstring(file:read('*all')))()
                     for k, v in pairs(data) do
                         br.player[id].storedData[k] = v
                     end
+
+                    file:close()
                 end
             end
 

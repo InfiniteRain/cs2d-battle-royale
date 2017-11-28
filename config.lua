@@ -8,7 +8,7 @@ return
     dangerAreaDamage   = 10,
 
     dangerZoneImage    = 'gfx/br/dz2.png',
-    fontImage          = 'gfx/be/fn.png',
+    fontImage          = 'gfx/br/fn2.png',
     killSoundFile      = 'br/ds.ogg',
     auraImage          = 'gfx/sprites/flare4.bmp',
 
@@ -95,7 +95,7 @@ return
         'gfx/br/c4.png',
         'gfx/br/c5.png',
         'gfx/br/dz2.png',
-        'gfx/br/fn.png',
+        'gfx/br/fn2.png',
         
         'sfx/br/ds.ogg'
     }

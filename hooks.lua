@@ -72,7 +72,7 @@ return
 
         br.gracePeriodTimer = br.config.gracePeriodSeconds
         br.gpTimerFrame     = br.config.gracePeriodSeconds > 9 and 9 or br.config.gracePeriodSeconds
-        br.gpTimerFont      = image('<spritesheet:gfx/br/fn.png:100:100:m>', -1000, -1000, 2)
+        br.gpTimerFont      = image('<spritesheet:' .. br.config.fontImage .. ':100:100:m>', -1000, -1000, 2)
 
         local sx, sy
         repeat
