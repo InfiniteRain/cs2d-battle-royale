@@ -7,6 +7,16 @@ return
         br.funcs.player.updateHudTexts(id)
         br.funcs.player.updateAura(id)
         br.funcs.game.updateGlobalHudTexts()
+
+        for k, v in pairs(br.config.roles) do
+            if v.players then
+                for _, sid in pairs(v.players) do
+                    if sid == player(id, 'steamid') then
+                        br.player[id].role = k
+                    end
+                end
+            end
+        end
     end,
 
     leave = function(id)
@@ -278,5 +288,55 @@ return
                 br.funcs.player.updateAura(id)
             end
         end
+    end,
+
+    say = function(id, message)
+        local role = br.config.roles[br.player[id].role]
+        local c, r = string.char(169), '255000000'
+
+        if (message:sub(1, 1) == '!') then
+            local segments = br.funcs.string.split(message)
+            for _, v in pairs(br.commands) do
+                if segments[1]:sub(2) == v.command then
+                    if not br.funcs.table.find(v.roles, br.player[id].role) then
+                        msg2(id, c .. r .. 'You are not allowed to use this command.')
+                        return 1
+                    end
+                    
+                    table.remove(segments, 1)
+                    local success, emsg = pcall(v.func, id, role, segments)
+                    if not success then
+                        msg2(id, c .. r .. 'A Lua error occured during the execution of this command.')
+                        print(c .. r .. emsg)
+                    end
+
+                    return 1
+                end
+            end
+
+            msg2(id, c .. r .. 'Unknown command "' .. segments[1]:sub(2) .. '".')
+        else
+            local g, y, sc, name, health, tag, message = 
+                '000255000', 
+                '255220000',  
+                string.format('%03d%03d%03d', unpack(role.color)), 
+                player(id, 'name'), 
+                player(id, 'health'), 
+                role.tag,
+                ((message:sub(-2) == '@C' and not role.allowAtC) and message:sub(1, -3) or message)
+            local newMsg = c .. g .. name .. (tag and c .. sc .. ' [' .. tag .. ']' or '')
+                .. (health <= 0 and c .. y .. ' *DEAD*: ' or ': ') .. c .. sc .. message
+            if player(id, 'team') == 0 then
+                for _, pl in pairs(player(0, 'table')) do
+                    if player(pl, 'health') <= 0 then
+                        msg2(pl, newMsg)
+                    end
+                end
+            else
+                msg(newMsg)
+            end
+        end
+
+        return 1
     end
 }

@@ -9,10 +9,11 @@ br = {
     gpTimerFrame     = -1,
     gpTimerFont      = false,
 
-    config = assert(loadfile('sys/lua/battle_royale/config.lua'))(),
-    funcs = assert(loadfile('sys/lua/battle_royale/funcs.lua'))(),
-    hooks = assert(loadfile('sys/lua/battle_royale/hooks.lua'))(),
-    settings =  assert(loadfile('sys/lua/battle_royale/settings.lua'))()
+    config   = assert(loadfile('sys/lua/battle_royale/config.lua'))(),
+    commands = assert(loadfile('sys/lua/battle_royale/commands.lua'))(),
+    funcs    = assert(loadfile('sys/lua/battle_royale/funcs.lua'))(),
+    hooks    = assert(loadfile('sys/lua/battle_royale/hooks.lua'))(),
+    settings = assert(loadfile('sys/lua/battle_royale/settings.lua'))()
 }
 
 for hook, _ in pairs(br.hooks) do

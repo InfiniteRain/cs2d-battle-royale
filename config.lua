@@ -98,5 +98,31 @@ return
         'gfx/br/fn2.png',
         
         'sfx/br/ds.ogg'
+    },
+
+    roles = {
+        admin = {
+            tag      = 'ADMIN',
+            color    = {255, 255, 255},
+            allowAtC = true,
+
+            players  = {
+                '76561198050038534',
+                '76561198005898017'
+            }
+        },
+
+        vip = {
+            tag     = 'VIP',
+            color   = {95, 255, 95},
+            allowAtC = true,
+            
+            players = {}
+        },
+
+        player = {
+            color = {255, 220, 0},
+            allowAtC = false,
+        }
     }
 }

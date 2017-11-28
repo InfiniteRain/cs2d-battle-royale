@@ -388,7 +388,8 @@ return
                 inGame           = false,
                 auraImage        = false,
                 storedData       = {},
-                loadedStoredData = false
+                loadedStoredData = false,
+                role             = 'player'
             }
         end,
 
@@ -457,12 +458,30 @@ return
             end
 
             return str .. '}'
-        end
+        end,
+
+        find = function(tbl, elem) 
+            for _, v in pairs(tbl) do
+                if v == elem then
+                    return true
+                end
+            end
+
+            return false
+        end,
     },
 
     string = {
         trim = function(str)
             return str:match('^%s*(.-)%s*$')
+        end,
+
+        split = function(str, delim)
+            local words = {}
+            for word in str:gmatch(delim or '%S+') do
+                table.insert(words, word)
+            end
+            return words
         end
     },
 
