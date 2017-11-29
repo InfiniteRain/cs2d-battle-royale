@@ -113,6 +113,8 @@ return
                 br.funcs.player.updateHudTexts(pl)
                 br.funcs.player.updateAura(pl)
             end
+
+            br.funcs.player.saveStoredData(pl)
         end
 
         br.funcs.game.updateGlobalHudTexts()
