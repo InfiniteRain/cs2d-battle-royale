@@ -318,6 +318,7 @@ return
 
             msg2(id, c .. r .. 'Unknown command "' .. segments[1]:sub(2) .. '".')
         else
+            --[[
             local g, y, sc, name, health, tag, message = 
                 '000255000', 
                 '255220000',  
@@ -336,7 +337,8 @@ return
                 end
             else
                 msg(newMsg)
-            end
+            end]]
+            return 0
         end
 
         return 1

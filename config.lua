@@ -15,7 +15,7 @@ return
     packages = {
         gray = {
             image           = 'gfx/br/c0.png',
-            spawns          = 6,
+            spawns          = 7,
             items           = {1, 2, 4, 61, 62, 64, 65, 61, 62, 64, 65, 78, 85},
             extraItemChance = 0.25,
             effectColor     = {64, 64, 64}
@@ -23,7 +23,7 @@ return
 
         orange = {
             image           = 'gfx/br/c1.png',
-            spawns          = 5,
+            spawns          = 8,
             items           = {51, 52, 53, 57, 57, 58, 61, 62, 64, 79},
             extraItemChance = 0.25,
             effectColor     = {255, 127, 0}
@@ -31,7 +31,7 @@ return
 
         green = {
             image           = 'gfx/br/c2.png',
-            spawns          = 15,
+            spawns          = 17,
             items           = {1, 2, 3, 4, 5, 6, 10, 11, 20, 21, 22, 23, 24, 75, 77, 79},
             extraItemChance = 0.25,
             effectColor     = {0, 255, 0}
@@ -39,7 +39,7 @@ return
 
         purple = {
             image           = 'gfx/br/c3.png',
-            spawns          = 5,
+            spawns          = 4,
             items           = {3, 6, 30, 31, 32, 33, 34, 64, 80, 89},
             extraItemChance = 0.25,
             effectColor     = {255, 000, 255}
@@ -47,7 +47,7 @@ return
 
         white = {
             image           = 'gfx/br/c4.png',
-            spawns          = 8,
+            spawns          = 10,
             items           = {64, 65, 65, 57, 58},
             extraItemChance = 0.25,
             effectColor     = {255, 255, 255}
