@@ -110,12 +110,12 @@ return
             return x + math.sin(math.rad(dir)) * dist, y - math.cos(math.rad(dir)) * dist
         end,
 
-        drawLine = function(x1, y1, x2, y2, width, mode, alpha, color)
+        drawLine = function(x1, y1, x2, y2, width, mode, alpha, color, id)
             local mode = mode or 1
             local alpha = alpha or 1
             local color = color or {255, 255, 255}
 
-            local line = image('gfx/block.bmp', 0, 0, mode)
+            local line = image('gfx/block.bmp', 0, 0, mode, id)
             local angle, distance = 
                     br.funcs.geometry.getAngle(x1, y1, x2, y2), 
                     br.funcs.geometry.distance(x1, y1, x2, y2)
@@ -388,7 +388,7 @@ return
             parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
 
             if not br.player[id].xpBar then
-                br.player[id].xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255})
+                br.player[id].xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
             end
 
             local barWidth = 128 * (levelData.progressNextLevel / levelData.neededForNextLevel)
