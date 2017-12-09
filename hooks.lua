@@ -8,6 +8,13 @@ return
         br.funcs.player.updateAura(id)
         br.funcs.game.updateGlobalHudTexts()
 
+        br.player[id].newMenu = function(...)
+            return br.menu.new(id, ...)
+        end
+        br.player[id].newTeam = function(...)
+            return br.team.new(br.player[id], ...)
+        end
+
         for k, v in pairs(br.config.roles) do
             if v.players then
                 for _, sid in pairs(v.players) do
@@ -280,16 +287,26 @@ return
         end
     end,
 
-    menu = function(id, menu, button)
-        if menu == 'Select aura' then
-            if button >= 1 and button <= 8 then
-                br.player[id].storedData.aura = button
-                br.funcs.player.updateAura(id)
-            elseif button == 9 then
-                br.player[id].storedData.aura = 0
-                br.funcs.player.updateAura(id)
-            end
+    menu = function(id, t, btn)
+        local user = br.player[id]
+        local are_pages = t:find('#')
+        local page = 1
+
+        if are_pages then
+            page = tonumber(br.misc.toTable(t, '#')[2])
         end
+
+        br.menu.users[id].cached_menu:onMenu(page, btn, are_pages)
+
+        -- if menu == 'Select aura' then
+        --     if button >= 1 and button <= 8 then
+        --         br.player[id].storedData.aura = button
+        --         br.funcs.player.updateAura(id)
+        --     elseif button == 9 then
+        --         br.player[id].storedData.aura = 0
+        --         br.funcs.player.updateAura(id)
+        --     end
+        -- end
     end,
 
     say = function(id, message)
