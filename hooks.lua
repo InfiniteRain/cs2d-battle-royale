@@ -4,7 +4,7 @@ return
     join = function(id)
         br.player[id] = br.funcs.player.getDataSchema()
         br.funcs.player.loadStoredData(id)
-        br.funcs.player.updateHudTexts(id)
+        br.funcs.timer.init(1000, br.funcs.player.updateHud, id)
         br.funcs.player.updateAura(id)
         br.funcs.game.updateGlobalHudTexts()
 
@@ -30,7 +30,7 @@ return
         if player(id, 'team') == 0 and team > 0 then
             br.player[id].inGame = true
             br.player[id].killed = true
-            br.funcs.player.updateHudTexts(id)
+            br.funcs.player.updateHud(id)
 
             local activePlayers = 0
             for _, pl in pairs(player(0, 'table')) do
@@ -98,10 +98,13 @@ return
         )
         br.shrinkStarted = false
 
+        br.expBar = image(br.config.expBarImage, 415, 430, 2)
+
         for _, pl in pairs(player(0, 'table')) do
             if br.player[pl].inGame then
                 br.player[pl].killed = false
                 br.player[pl].auraImage = false
+                br.player[pl].xpBar = false
 
                 local spawnx, spawny
                 repeat
@@ -110,11 +113,22 @@ return
                 until br.funcs.game.checkIfSpawnable(spawnx, spawny)
 
                 parse('spawnplayer ' .. pl .. ' ' .. spawnx * 32 + 16 .. ' ' .. spawny * 32 + 16)
-                br.funcs.player.updateHudTexts(pl)
+                br.funcs.player.updateHud(pl)
                 br.funcs.player.updateAura(pl)
             end
 
             br.funcs.player.saveStoredData(pl)
+        end
+
+        for _, train in pairs(br.trains) do
+            train.image = image(train.config.image, 0, 0, 3)
+            imagealpha(train.image, 1)
+
+            train.running = false
+            train.startedAt = 0
+            train.finishesIn = 0
+
+            br.funcs.timer.init(train.config.cycle * 1000, br.funcs.train.launch, train)
         end
 
         br.funcs.game.updateGlobalHudTexts()
@@ -124,11 +138,11 @@ return
         br.player[victim].killed = true
         if killer > 0 and killer ~= victim then
             br.funcs.player.addExp(killer, 150)
-            br.funcs.player.updateHudTexts(killer)
+            br.funcs.player.updateHud(killer)
         end
 
         parse('sv_sound "' .. br.config.killSoundFile .. '"')
-        br.funcs.player.updateHudTexts(victim)
+        br.funcs.player.updateHud(victim)
         br.funcs.game.checkIfEnded()
         br.funcs.game.updateGlobalHudTexts()
     end,
@@ -190,6 +204,16 @@ return
         if not br.shrinkStarted and br.safeZone then
             br.shrinkStarted = true
             br.funcs.geometry.shrinkZone(br.safeZone, br.config.finalAreaRadius * 32, br.config.areaShrinkingSpeed)
+        end
+    end,
+
+    ms100 = function()
+        for _, v in pairs(player(0, 'tableliving')) do
+            for _, train in pairs(br.trains) do
+                if br.funcs.train.positionInTrain(train, player(v, 'x'), player(v, 'y')) then
+                    parse('customkill 0 "train" ' .. v)
+                end
+            end
         end
     end,
 
@@ -344,5 +368,12 @@ return
         end
 
         return 1
-    end
+    end,
+
+    projectile = function(id, weapon, x, y)
+        if weapon == 86 then
+            parse('spawnnpc 3 ' .. (x / 32) .. ' ' .. (y / 32) .. ' 0') 
+            return 1
+        end
+    end,
 }

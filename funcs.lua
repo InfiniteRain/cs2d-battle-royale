@@ -30,6 +30,73 @@ return
         end
     },
 
+    train = {
+        launch = function(train)
+            if train.running then error('this train is already running', 2) end
+
+            local distance = br.funcs.geometry.distance(
+                train.realStart[1], train.realStart[2], 
+                train.realFinish[1], train.realFinish[2]
+            )
+            local time = distance / train.config.speed * 1000
+            imagealpha(train.image, 1)
+            imagepos(train.image, train.realStart[1], train.realStart[2], train.angle)
+            tween_move(train.image, time, train.realFinish[1], train.realFinish[2])
+
+            train.running = true
+            train.startedAt = os.clock() * 1000
+            train.finishesIn = time
+
+            br.funcs.timer.init(time, function() 
+                imagealpha(train.image, 0)
+
+                train.running = false
+                train.startedAt = 0
+                train.finishesIn = 0
+
+                br.funcs.timer.init(train.config.cycle * 1000, br.funcs.train.launch, train)
+            end)
+        end,
+
+        positionInTrain = function(train, cx, cy)
+            if not train.running then return false end
+            
+            local x, y, points = object(train.image, 'x'), object(train.image, 'y'), {}
+            local points = {}
+
+            for my = -1, 1, 2 do
+                for mx = -1, 1, 2 do
+                    if mx == 1 and my == 1 then break end
+                    local fx, fy = br.funcs.geometry.extendPosition(
+                        x, y, train.angle + (-90 * mx), train.config.size[1] / 2
+                    )
+                    table.insert(points, {br.funcs.geometry.extendPosition(
+                        fx, fy, train.angle, my * train.config.size[2] / 2
+                    )})
+                end
+            end
+
+            local ax = points[1][1]
+            local ay = points[1][2]
+            local bx = points[2][1]
+            local by = points[2][2]
+            local dx = points[3][1]
+            local dy = points[3][2]
+
+            local bax = bx - ax
+            local bay = by - ay
+            local dax = dx - ax
+            local day = dy - ay
+
+            if ((cx - ax) * bax + (cy - ay) * bay < 0.0) then return false end
+            if ((cx - bx) * bax + (cy - by) * bay > 0.0) then return false end
+            if ((cx - ax) * dax + (cy - ay) * day < 0.0) then return false end
+            if ((cx - dx) * dax + (cy - dy) * day > 0.0) then return false end
+            
+            return true
+        end
+    },
+
     geometry = {
         distance = function(x1, y1, x2, y2)
             return math.sqrt((y1 - y2)^2 + (x1 - x2)^2)
@@ -43,7 +110,7 @@ return
             return x + math.sin(math.rad(dir)) * dist, y - math.cos(math.rad(dir)) * dist
         end,
 
-        drawLine = function(x1, y1, x2, y2, mode, alpha, color)
+        drawLine = function(x1, y1, x2, y2, width, mode, alpha, color)
             local mode = mode or 1
             local alpha = alpha or 1
             local color = color or {255, 255, 255}
@@ -54,7 +121,7 @@ return
                     br.funcs.geometry.distance(x1, y1, x2, y2)
             local x, y = br.funcs.geometry.extendPosition(x1, y1, angle, distance / 2)
             imagepos(line, x, y, angle)
-            imagescale(line, 1 / 32, distance / 32)
+            imagescale(line, (1 / 32) * width, distance / 32)
             imagealpha(line, alpha)
             imagecolor(line, unpack(color))
             return {
@@ -62,13 +129,12 @@ return
                 x1 = x1, 
                 y1 = y1, 
                 x2 = x2, 
-                y2 = y2
+                y2 = y2,
+                width = width
             }
         end,
 
-        moveLine = function(line, x1, y1, x2, y2, ms)
-            local ms = ms or 0
-
+        moveLine = function(line, x1, y1, x2, y2)
             line.x1 = x1
             line.y1 = y1
             line.x2 = x2
@@ -78,13 +144,8 @@ return
                     br.funcs.geometry.distance(x1, y1, x2, y2)
             local x, y = br.funcs.geometry.extendPosition(x1, y1, angle, distance / 2)
 
-            if ms >= 0 then
-                tween_move(line.image, ms, x, y, angle)
-                tween_scale(line.image, ms, 1, distance / 32)
-            else
-                imagepos(line.image, x, y, angle)
-                imagescale(line.image, 1, distance / 32)
-            end
+            imagepos(line.image, x, y, angle)
+            imagescale(line.image, (1 / 32) * line.width, distance / 32)
         end,
 
         freeLine = function(line)
@@ -210,9 +271,9 @@ return
                 return false
             end
             
-            for pattern, conf in pairs(br.config.unspawnableZones) do
+            for pattern, conf in pairs(br.config.maps) do
                 if map('name'):match(pattern) then
-                    for _, v in pairs(conf) do
+                    for _, v in pairs(conf.unspawnableZones) do
                         if x >= v[1] and y >= v[2] and x <= v[3] and y <= v[4] then
                             return false
                         end
@@ -303,14 +364,15 @@ return
     },
 
     player = {
-        updateHudTexts = function(id)
-            local levelText
-            local levelData = br.funcs.player.getExpData(id)
-            
-            levelText = string.char('169') .. '030144255Exp.: ' .. levelData.currentExp .. ' | Level: ' 
-                .. levelData.currentLevel .. ' | Next level: ' .. levelData.progressNextLevel .. '/' 
+        updateHud = function(id)
+            local expText, levelText
+            local levelData = br.funcs.player.getExpData(id)    
+            expText = string.char('169') .. '255165000' .. levelData.progressNextLevel .. '/' 
                 .. levelData.neededForNextLevel
-            parse('hudtxt2 ' .. id ..' 3 "'.. levelText .. '" 415 430 1')
+            parse('hudtxt2 ' .. id ..' 3 "'.. expText .. '" 428 422 1')
+            levelText = string.char('169') .. '030144255' .. levelData.currentLevel
+            parse('hudtxt2 ' .. id ..' 5 "'.. levelText .. '" 347 422 1')
+
 
             if player(id, 'steamid') == '0' then
                 local warnText = string.char(169) .. '255000000You\'re not logged into Steam! Your level progress will '
@@ -320,10 +382,17 @@ return
             
             local killedText = ''
             if br.player[id].inGame and br.player[id].killed then
-                killedText = string.char(169) .. '255000000You\'re DEAD. If you try to respawn, you will get '
-                        .. 'instantly killed!'
+                killedText = string.char(169) .. '255000000You\'re DEAD. If you try to respawn, you will get instantly '
+                        .. 'killed!'
             end
             parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
+
+            if not br.player[id].xpBar then
+                br.player[id].xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255})
+            end
+
+            local barWidth = 128 * (levelData.progressNextLevel / levelData.neededForNextLevel)
+            br.funcs.geometry.moveLine(br.player[id].xpBar, 364, 430, 364 + barWidth, 430)
         end,
 
         getExpData = function(id)
@@ -341,7 +410,7 @@ return
                 nextLevelExp = nextLevelExp,
                 thisLevelExp = thisLevelExp,
                 neededForNextLevel = neededForNextLevel,
-                progressNextLevel = progressNextLevel
+                progressNextLevel = (currentLevel == 0 and progressNextLevel or progressNextLevel + 1)
             }
         end,
 
@@ -364,7 +433,7 @@ return
                 end
             end
 
-            br.funcs.player.updateHudTexts(id)
+            br.funcs.player.updateHud(id)
         end,
 
         updateAura = function(id)
@@ -389,7 +458,8 @@ return
                 auraImage        = false,
                 storedData       = {},
                 loadedStoredData = false,
-                role             = 'player'
+                role             = 'player',
+                xpBar            = false
             }
         end,
 
