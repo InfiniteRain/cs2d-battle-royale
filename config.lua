@@ -82,8 +82,8 @@ return
 
             trains = {
                 {
-                    start  = {50 , 0  },
-                    finish = {50 , 179},
+                    start  = {35 , 0  },
+                    finish = {35 , 152},
                     speed  = 960,
                     cycle  = 10,
 
