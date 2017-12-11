@@ -28,9 +28,9 @@ br = {
     -- lib
     timer = assert(loadfile('sys/lua/battle_royale/lib/MikuAuahDark/timerEx.lua'))(),
     class = assert(loadfile('sys/lua/battle_royale/lib/Gajos/class.lua'))(),
-    team = assert(loadfile('sys/lua/battle_royale/team.lua'))(),
-
     menu = assert(loadfile('sys/lua/battle_royale/lib/Gajos/menu.lua'))(),
+
+    team = assert(loadfile('sys/lua/battle_royale/team.lua'))(),
 }
 
 for hook, _ in pairs(br.hooks) do
