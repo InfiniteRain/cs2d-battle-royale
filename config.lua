@@ -79,8 +79,8 @@ return
 
             trains = {
                 {
-                    start  = {35 , 0  },
-                    finish = {35 , 152},
+                    start  = {50 , 0  },
+                    finish = {50 , 179},
                     speed  = 960,
                     cycle  = 10,
 
