@@ -4,7 +4,7 @@ return
     join = function(id)
         br.player[id] = br.funcs.player.getDataSchema()
         br.funcs.player.loadStoredData(id)
-        br.funcs.player.updateHudTexts(id)
+        br.funcs.timer.init(1000, br.funcs.player.updateHud, id)
         br.funcs.player.updateAura(id)
         br.funcs.game.updateGlobalHudTexts()
 
@@ -37,7 +37,7 @@ return
         if player(id, 'team') == 0 and team > 0 then
             br.player[id].inGame = true
             br.player[id].killed = true
-            br.funcs.player.updateHudTexts(id)
+            br.funcs.player.updateHud(id)
 
             local activePlayers = 0
             for _, pl in pairs(player(0, 'table')) do
@@ -65,6 +65,10 @@ return
     end,
 
     startround = function()
+        for _, timer in pairs(_G['TIMERS'] or {}) do
+            br.funcs.timer.free(timer)
+        end
+
         br.packages = {}
         for name, package in pairs(br.config.packages) do
             for i = 1, package.spawns do
@@ -105,10 +109,13 @@ return
         )
         br.shrinkStarted = false
 
+        br.expBar = image(br.config.expBarImage, 415, 430, 2)
+
         for _, pl in pairs(player(0, 'table')) do
             if br.player[pl].inGame then
                 br.player[pl].killed = false
                 br.player[pl].auraImage = false
+                br.player[pl].xpBar = false
 
                 local spawnx, spawny
                 repeat
@@ -117,11 +124,22 @@ return
                 until br.funcs.game.checkIfSpawnable(spawnx, spawny)
 
                 parse('spawnplayer ' .. pl .. ' ' .. spawnx * 32 + 16 .. ' ' .. spawny * 32 + 16)
-                br.funcs.player.updateHudTexts(pl)
+                br.funcs.player.updateHud(pl)
                 br.funcs.player.updateAura(pl)
             end
 
             br.funcs.player.saveStoredData(pl)
+        end
+
+        for _, train in pairs(br.trains) do
+            train.image = image(train.config.image, 0, 0, 3)
+            imagealpha(train.image, 1)
+
+            train.running = false
+            train.startedAt = 0
+            train.finishesIn = 0
+
+            br.funcs.timer.init(train.config.cycle * 1000, br.funcs.train.launch, train)
         end
 
         br.funcs.game.updateGlobalHudTexts()
@@ -131,11 +149,11 @@ return
         br.player[victim].killed = true
         if killer > 0 and killer ~= victim then
             br.funcs.player.addExp(killer, 150)
-            br.funcs.player.updateHudTexts(killer)
+            br.funcs.player.updateHud(killer)
         end
 
         parse('sv_sound "' .. br.config.killSoundFile .. '"')
-        br.funcs.player.updateHudTexts(victim)
+        br.funcs.player.updateHud(victim)
         br.funcs.game.checkIfEnded()
         br.funcs.game.updateGlobalHudTexts()
     end,
@@ -183,9 +201,9 @@ return
 
             for _, ob in pairs(object(0, 'table')) do
                 local x, y = object(ob, 'x'), object(ob, 'y')
-                if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y)
-                    > br.funcs.geometry.getZoneRadius(br.safeZone) then
-                    if object(ob, 'type') < 30 then
+                if type(object(ob, 'type')) == 'number' and object(ob, 'type') < 30 then
+                    if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y)
+                        > br.funcs.geometry.getZoneRadius(br.safeZone) then
                         parse('killobject ' .. ob)
                     end
                 end
@@ -197,6 +215,16 @@ return
         if not br.shrinkStarted and br.safeZone then
             br.shrinkStarted = true
             br.funcs.geometry.shrinkZone(br.safeZone, br.config.finalAreaRadius * 32, br.config.areaShrinkingSpeed)
+        end
+    end,
+
+    ms100 = function()
+        for _, v in pairs(player(0, 'tableliving')) do
+            for _, train in pairs(br.trains) do
+                if br.funcs.train.positionInTrain(train, player(v, 'x'), player(v, 'y')) then
+                    parse('customkill 0 "train" ' .. v)
+                end
+            end
         end
     end,
 
@@ -268,35 +296,31 @@ return
 
     serveraction = function(id, action)
         if action == 1 then
-            local menuString, aura = 'Select aura', br.player[id].storedData.aura
-            for k, v in pairs(br.config.auras) do
-                if aura ~= k then
-                    menuString = menuString .. ',' .. v[1]
-                else
-                    menuString = menuString .. ',(' .. v[1] .. ')'
-                end
-            end
-
-            if aura ~= 0 then
-                menuString = menuString .. ',No aura' 
-            else
-                menuString = menuString .. ',(No aura)'
-            end
-
-            menu(id, menuString)
+            br.team.openMenu(id)
         end
+
+        -- if action == 1 then
+        --     local menuString, aura = 'Select aura', br.player[id].storedData.aura
+        --     for k, v in pairs(br.config.auras) do
+        --         if aura ~= k then
+        --             menuString = menuString .. ',' .. v[1]
+        --         else
+        --             menuString = menuString .. ',(' .. v[1] .. ')'
+        --         end
+        --     end
+
+        --     if aura ~= 0 then
+        --         menuString = menuString .. ',No aura' 
+        --     else
+        --         menuString = menuString .. ',(No aura)'
+        --     end
+
+        --     menu(id, menuString)
+        -- end
     end,
 
-    menu = function(id, t, btn)
-        local user = br.player[id]
-        local are_pages = t:find('#')
-        local page = 1
-
-        if are_pages then
-            page = tonumber(br.misc.toTable(t, '#')[2])
-        end
-
-        br.menu.users[id].cached_menu:onMenu(page, btn, are_pages)
+    menu = function(id, menu, button)
+        br.menu.users[id].cached_menu:onMenu(menu, button)
 
         -- if menu == 'Select aura' then
         --     if button >= 1 and button <= 8 then
@@ -361,5 +385,12 @@ return
         end
 
         return 1
-    end
+    end,
+
+    projectile = function(id, weapon, x, y)
+        if weapon == 86 then
+            parse('spawnnpc 3 ' .. (x / 32) .. ' ' .. (y / 32) .. ' 0') 
+            return 1
+        end
+    end,
 }

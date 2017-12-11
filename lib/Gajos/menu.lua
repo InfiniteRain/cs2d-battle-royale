@@ -158,18 +158,25 @@ local MenuController = function(user_id, title, noskip)
         users[user_id].cached_menu = self
     end
 
-    function self:onMenu(...)
-        self.model:onMenu(...)
+    function self:onMenu(t, btn)
+        local are_pages = t:find('#')
+        local page = 1
+
+        if are_pages then
+            page = tonumber(br.misc.toTable(t, '#')[2])
+        end
+
+        self.model:onMenu(page, btn, are_pages)
         users[user_id].cached_menu = false
     end
 
     -- constructor
     self.model:setTitle(title)
-    self:noskip(noskip or false)
+    self:setNoskip(noskip or false)
 
     return self
 end
-__index = MenuController
+-- MenuController.__index = MenuController
 
 return
 {

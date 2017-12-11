@@ -1,36 +1,29 @@
--- libs
-local lib_dir = 'sys/lua/battle_royale/lib/'
-for name in io.enumdir(lib_dir) do
-    if name ~= '.' and name ~= '..' then
-        if name:sub(-4) == '.lua' then
-            dofile(lib_dir .. name)
-        end
-    end
-end
-
 br = {
     player           = {},
+    teams            = {},
     safeZone         = false,
     shrinkStarted    = false,
     packages         = {},
     gracePeriodTimer = 0,
     roundEnded       = false,
-
+    
     gpTimerFrame     = -1,
     gpTimerFont      = false,
+
+    expBar           = false,
+    trains           = {},
+
+    -- lib
+    timer    = assert(loadfile('sys/lua/battle_royale/lib/MikuAuahDark/timerEx.lua'))(),
+    class    = assert(loadfile('sys/lua/battle_royale/lib/Gajos/class.lua'))(),
+    menu     = assert(loadfile('sys/lua/battle_royale/lib/Gajos/menu.lua'))(),
 
     config   = assert(loadfile('sys/lua/battle_royale/config.lua'))(),
     commands = assert(loadfile('sys/lua/battle_royale/commands.lua'))(),
     funcs    = assert(loadfile('sys/lua/battle_royale/funcs.lua'))(),
     hooks    = assert(loadfile('sys/lua/battle_royale/hooks.lua'))(),
     settings = assert(loadfile('sys/lua/battle_royale/settings.lua'))(),
-
-    -- lib
-    timer = assert(loadfile('sys/lua/battle_royale/lib/MikuAuahDark/timerEx.lua'))(),
-    class = assert(loadfile('sys/lua/battle_royale/lib/Gajos/class.lua'))(),
-    menu = assert(loadfile('sys/lua/battle_royale/lib/Gajos/menu.lua'))(),
-
-    team = assert(loadfile('sys/lua/battle_royale/team.lua'))(),
+    team     = assert(loadfile('sys/lua/battle_royale/team.lua'))(),
 }
 
 for hook, _ in pairs(br.hooks) do
@@ -44,6 +37,50 @@ end
 
 for i = 1, 32 do
     br.player[i] = br.funcs.player.getDataSchema()
+end
+
+for _, v in pairs(br.config.auras) do
+    local name = v[1]
+    local r, g, b = v[2], v[3], v[4]
+
+    br.teams[name] = br.team.new(name, r, g, b)
+end
+
+for pattern, conf in pairs(br.config.maps) do
+    if map('name'):match(pattern) then
+        for _, train in pairs(conf.trains or {}) do
+            local angle = br.funcs.geometry.getAngle(
+                train.start[1],
+                train.start[2], 
+                train.finish[1],
+                train.finish[2]
+            ) 
+
+            table.insert(br.trains, {
+                image = false,
+                angle = angle,
+                realStart = {br.funcs.geometry.extendPosition(
+                    train.start[1] * 32 + 16,
+                    train.start[2] * 32 + 16,
+                    angle,
+                    -train.size[2]/2
+                )},
+                realFinish = {br.funcs.geometry.extendPosition(
+                    train.finish[1] * 32 + 16,
+                    train.finish[2] * 32 + 16,
+                    angle,
+                    train.size[2]/2
+                )},
+
+                running = false,
+                startedAt = 0,
+                finishesIn = 0,
+                config = train,
+            })
+        end
+    end
+
+    break
 end
 
 br.funcs.server.checkServertransfer()
