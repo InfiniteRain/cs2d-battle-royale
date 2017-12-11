@@ -32,7 +32,7 @@ return
 
     train = {
         launch = function(train)
-            if train.running then error('this train is already running', 2) end
+            if train.running then return end
 
             local distance = br.funcs.geometry.distance(
                 train.realStart[1], train.realStart[2], 
@@ -233,27 +233,43 @@ return
             }
         end,
 
-        getZoneRadius = function(zone)
+        getZoneRadiusAtTimePoint = function(zone, point)
             if zone.shrinking then
                 local starting, finishing = zone.radius, zone.shrinkFinalRadius
                 local timerStarted, timerNeeded = zone.shrinkStart, zone.shrinkEnd
-                local multiplier = ((os.clock() * 1000) - timerStarted) / timerNeeded
+                local multiplier = (point - timerStarted) / timerNeeded
                 return starting + (finishing - starting) * multiplier
             else
                 return zone.radius
             end
+        end,
+        
+        getZoneRadius = function(zone)
+            return br.funcs.geometry.getZoneRadiusAtTimePoint(zone, os.clock() * 1000)
         end,
 
         shrinkZone = function(zone, radius, speed)
             local finalScale   = radius / 307
             local currentScale = zone.radius / 307
             local millisecs = (zone.radius - radius) / speed * 1000
-            tween_scale(zone.image, millisecs, finalScale, finalScale)
-
+            
             zone.shrinking = true
             zone.shrinkStart = os.clock() * 1000
             zone.shrinkEnd = millisecs
             zone.shrinkFinalRadius = radius
+
+            local initTweenScale 
+            initTweenScale = function(time)
+                if time > 30000 then
+                    local tempScale = br.funcs.geometry.getZoneRadiusAtTimePoint(zone, os.clock() * 1000 + 30000) / 307
+                    tween_scale(zone.image, 30000, tempScale, tempScale)
+                    br.funcs.timer.init(30000, initTweenScale, time - 30000)                    
+                else
+                    tween_scale(zone.image, time, finalScale, finalScale)
+                end
+            end
+            initTweenScale(millisecs, initTweenScale)
+
             zone.timer = br.funcs.timer.init(millisecs, function() 
                 zone.shrinking = false
                 zone.shrinkStart = 0

@@ -58,6 +58,10 @@ return
     end,
 
     startround = function()
+        for _, timer in pairs(_G['TIMERS'] or {}) do
+            br.funcs.timer.free(timer)
+        end
+
         br.packages = {}
         for name, package in pairs(br.config.packages) do
             for i = 1, package.spawns do
@@ -190,9 +194,9 @@ return
 
             for _, ob in pairs(object(0, 'table')) do
                 local x, y = object(ob, 'x'), object(ob, 'y')
-                if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y)
-                    > br.funcs.geometry.getZoneRadius(br.safeZone) then
-                    if object(ob, 'type') < 30 then
+                if type(object(ob, 'type')) == 'number' and object(ob, 'type') < 30 then
+                    if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y)
+                        > br.funcs.geometry.getZoneRadius(br.safeZone) then
                         parse('killobject ' .. ob)
                     end
                 end
