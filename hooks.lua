@@ -8,6 +8,13 @@ return
         br.funcs.player.updateAura(id)
         br.funcs.game.updateGlobalHudTexts()
 
+        br.player[id].newMenu = function(...)
+            return br.menu.new(id, ...)
+        end
+        br.player[id].newTeam = function(...)
+            return br.team.new(br.player[id], ...)
+        end
+
         for k, v in pairs(br.config.roles) do
             if v.players then
                 for _, sid in pairs(v.players) do
@@ -24,6 +31,9 @@ return
         br.player[id] = br.funcs.player.getDataSchema()
         br.funcs.game.updateGlobalHudTexts()
         br.funcs.game.checkIfEnded()
+
+        -- team
+        br.team.onLeave(id)
     end,
 
     team = function(id, team)
@@ -116,12 +126,24 @@ return
                     spawny = math.random(0, map 'ysize')
                 until br.funcs.game.checkIfSpawnable(spawnx, spawny)
 
+                br.team.setPos(pl, spawnx, spawny)
+                br.team.updateAura(pl)
+
                 parse('spawnplayer ' .. pl .. ' ' .. spawnx * 32 + 16 .. ' ' .. spawny * 32 + 16)
                 br.funcs.player.updateHud(pl)
-                br.funcs.player.updateAura(pl)
+                -- br.funcs.player.updateAura(pl)
             end
 
             br.funcs.player.saveStoredData(pl)
+        end
+
+        -- repos @ teams
+        for _, pl in pairs(player(0, 'table')) do
+            local x, y = br.team.getPos(pl)
+
+            if x and y then
+                parse('setpos ' .. pl .. ' ' .. x * 32 + 16 .. ' ' .. y * 32 + 16)
+            end
         end
 
         for _, train in pairs(br.trains) do
@@ -289,35 +311,41 @@ return
 
     serveraction = function(id, action)
         if action == 1 then
-            local menuString, aura = 'Select aura', br.player[id].storedData.aura
-            for k, v in pairs(br.config.auras) do
-                if aura ~= k then
-                    menuString = menuString .. ',' .. v[1]
-                else
-                    menuString = menuString .. ',(' .. v[1] .. ')'
-                end
-            end
-
-            if aura ~= 0 then
-                menuString = menuString .. ',No aura' 
-            else
-                menuString = menuString .. ',(No aura)'
-            end
-
-            menu(id, menuString)
+            br.team.openMenu(id)
         end
+
+        -- if action == 1 then
+        --     local menuString, aura = 'Select aura', br.player[id].storedData.aura
+        --     for k, v in pairs(br.config.auras) do
+        --         if aura ~= k then
+        --             menuString = menuString .. ',' .. v[1]
+        --         else
+        --             menuString = menuString .. ',(' .. v[1] .. ')'
+        --         end
+        --     end
+
+        --     if aura ~= 0 then
+        --         menuString = menuString .. ',No aura' 
+        --     else
+        --         menuString = menuString .. ',(No aura)'
+        --     end
+
+        --     menu(id, menuString)
+        -- end
     end,
 
     menu = function(id, menu, button)
-        if menu == 'Select aura' then
-            if button >= 1 and button <= 8 then
-                br.player[id].storedData.aura = button
-                br.funcs.player.updateAura(id)
-            elseif button == 9 then
-                br.player[id].storedData.aura = 0
-                br.funcs.player.updateAura(id)
-            end
-        end
+        br.menu.users[id].cached_menu:onMenu(menu, button)
+
+        -- if menu == 'Select aura' then
+        --     if button >= 1 and button <= 8 then
+        --         br.player[id].storedData.aura = button
+        --         br.funcs.player.updateAura(id)
+        --     elseif button == 9 then
+        --         br.player[id].storedData.aura = 0
+        --         br.funcs.player.updateAura(id)
+        --     end
+        -- end
     end,
 
     say = function(id, message)
