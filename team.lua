@@ -66,7 +66,7 @@ local newTeam = function(name, r, g, b)
     function self:addMember(id)
         local user = users[id]
 
-        if #self.members < 4 then
+        if not user.team and #self.members < 4 then
             user.team = self
             self:drawAura(id)
             removeInvitations(id)
@@ -89,7 +89,7 @@ local newTeam = function(name, r, g, b)
         end
         if #self.members > 0 then
             for _, v in pairs(self.members) do
-                self.owner = v
+                self:setOwner(v)
                 return
             end
         end
@@ -159,7 +159,8 @@ local openMenu_teamList = function(id)
             else
                 removeInvitations(id)
                 team:addInvitation(id)
-                msg2(team.owner, player(id, 'name') .. ' wants to join your team.')
+                msg2(id, 'Team invitation sent to ' .. team.name .. ' Team.')
+                msg2(team.owner, player(id, 'name') .. ' wants to join your team@C')
             end
 
         end, not(n_members == 4))
@@ -274,6 +275,8 @@ local onLeave = function(id)
     if user.team then
         user.team:removeMember(id)
     end
+
+    removeInvitations(id)
 end
 
 return
