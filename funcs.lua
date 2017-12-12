@@ -344,6 +344,50 @@ return
                     br.roundEnded = true
                     parse('trigger draw')
                     parse('restart 5')
+                else
+                    local name
+
+                    local aliveTeams = function()
+                        local counter = 0
+                        for _, team in pairs(br.teams) do
+                            if br.team.isAliveTeam(team) then
+                                name = team.name .. ' Team'
+                                counter = counter + 1
+                            end
+                        end
+                        return counter
+                    end
+
+                    local playersWithoutTeam = function()
+                        local counter = 0
+                        for _, pl in pairs(player(0, 'tableliving')) do
+                            if not br.team.getTeam(pl) then
+                                counter = counter + 1
+                            end
+                        end
+                        return counter
+                    end
+
+                    if aliveTeams() == 1 and playersWithoutTeam() == 0 then
+                        text = name .. ' has WON the game!'
+                        br.funcs.player.addExp(lastAlivePlayerId, 450)
+                        
+                        for i = 1, 5 do
+                            msg(
+                                string.char(169) .. 
+                                math.random(100, 255) ..
+                                math.random(100, 255) ..
+                                math.random(100, 255) ..
+                                text ..
+                                string.rep(' ', i) ..
+                                '@C'
+                            )
+                        end
+
+                        br.roundEnded = true
+                        parse('trigger draw')
+                        parse('restart 5')
+                    end
                 end
             end
         end,

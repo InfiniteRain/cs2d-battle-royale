@@ -167,7 +167,7 @@ local MenuController = function(user_id, title, noskip)
         end
 
         self.model:onMenu(page, btn, are_pages)
-        users[user_id].cached_menu = false
+        -- users[user_id].cached_menu = false
     end
 
     -- constructor
