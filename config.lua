@@ -7,11 +7,13 @@ return
     areaShrinkingSpeed = 70,
     dangerAreaDamage   = 10,
 
-    dangerZoneImage    = 'gfx/br/dz2.png',
-    fontImage          = 'gfx/br/fn2.png',
-    killSoundFile      = 'br/ds.ogg',
-    auraImage          = 'gfx/sprites/flare4.bmp',
-    expBarImage        = 'gfx/br/xb.png',
+    dangerZoneImage     = 'gfx/br/dz2.png',
+    fontImage           = 'gfx/br/fn2.png',
+    killSoundFile       = 'br/ds.ogg',
+    auraImage           = 'gfx/sprites/flare4.bmp',
+    expBarImage         = 'gfx/br/xb.png',
+    progressBarImage    = 'gfx/br/bb.png',
+    bigProgressBarImage = 'gfx/br/eb.png',
 
     packages = {
         gray = {
@@ -112,6 +114,8 @@ return
         'gfx/br/dz2.png',
         'gfx/br/fn2.png',
         'gfx/br/xb.png',
+        'gfx/br/bb.png',
+        'gfx/br/eb.png',
         'gfx/br/t.png',
         
         'sfx/br/ds.ogg'

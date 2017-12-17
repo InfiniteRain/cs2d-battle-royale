@@ -119,6 +119,13 @@ return
                 br.player[pl].killed = false
                 br.player[pl].auraImage = false
                 br.player[pl].xpBar = false
+                br.player[pl].hpBar = false
+                br.player[pl].hpBarFrame = false
+                br.player[pl].armorBar = false
+                br.player[pl].armorBarFrame = false
+                br.player[pl].stamBar = false
+                br.player[pl].stamBarFrame = false
+                br.player[pl].stamina = 100
 
                 local spawnx, spawny
                 repeat
@@ -212,6 +219,19 @@ return
                         parse('customkill 0 "danger zone" ' .. pl)
                     end
                 end
+
+                if player(pl, 'armor') == 204 then
+                    br.funcs.timer.init(10, br.funcs.player.updateHud, pl)
+                end
+
+                if not br.player[pl].sprinting then
+                    br.player[pl].stamina = br.player[pl].stamina + 2
+                    if br.player[pl].stamina >= 100 then
+                        br.player[pl].stamina = 100
+                    end
+
+                    br.funcs.player.updateHud(pl)
+                end
             end
 
             for _, ob in pairs(object(0, 'table')) do
@@ -285,6 +305,10 @@ return
                 msg2(id, text)
             end
         end
+
+        if br.player[id].sprinting then
+            parse('effect "colorsmoke" ' .. player(id, 'x') .. ' ' .. player(id, 'y') .. '  1 1 128 128 128')
+        end
     end,
 
     hit = function(victim, source)
@@ -294,6 +318,8 @@ return
             end 
 
             return 1
+        else
+            br.funcs.timer.init(10, br.funcs.player.updateHud, victim)
         end
     end,
 
@@ -313,39 +339,10 @@ return
         if action == 1 then
             br.team.openMenu(id)
         end
-
-        -- if action == 1 then
-        --     local menuString, aura = 'Select aura', br.player[id].storedData.aura
-        --     for k, v in pairs(br.config.auras) do
-        --         if aura ~= k then
-        --             menuString = menuString .. ',' .. v[1]
-        --         else
-        --             menuString = menuString .. ',(' .. v[1] .. ')'
-        --         end
-        --     end
-
-        --     if aura ~= 0 then
-        --         menuString = menuString .. ',No aura' 
-        --     else
-        --         menuString = menuString .. ',(No aura)'
-        --     end
-
-        --     menu(id, menuString)
-        -- end
     end,
 
     menu = function(id, menu, button)
         br.menu.users[id].cached_menu:onMenu(menu, button)
-
-        -- if menu == 'Select aura' then
-        --     if button >= 1 and button <= 8 then
-        --         br.player[id].storedData.aura = button
-        --         br.funcs.player.updateAura(id)
-        --     elseif button == 9 then
-        --         br.player[id].storedData.aura = 0
-        --         br.funcs.player.updateAura(id)
-        --     end
-        -- end
     end,
 
     say = function(id, message)
@@ -408,4 +405,40 @@ return
             return 1
         end
     end,
+
+    walkover = function(id, iid, type, ain, a, mode)
+        if (type >= 64 and type <= 65) or (type >= 57 and type <= 58) or (type >= 79 and type <= 84) then
+            br.funcs.timer.init(10, br.funcs.player.updateHud, id)
+        end
+    end,
+
+    key = function(id, key, state)
+        if key == 'space' then
+            if state == 1 then
+                if br.player[id].stamina > 0 then
+                    br.player[id].sprinting = true
+                    parse('speedmod ' .. id .. ' 13')
+                end
+            else
+                br.player[id].sprinting = false
+                parse('speedmod ' .. id .. ' 0')
+            end
+        end
+    end,
+
+    move = function(id, x, y, walk)
+        if br.player[id].sprinting and walk == 0 then
+            br.player[id].stamina = br.player[id].stamina - 0.33
+            if br.player[id].stamina < 0 then
+                br.player[id].stamina = 0
+                br.player[id].sprinting = false
+                parse('speedmod ' .. id .. ' 0')
+            else
+                parse('speedmod ' .. id .. ' 13')
+            end
+            br.funcs.player.updateHud(id)
+        elseif br.player[id].sprinting and walk == 1 then
+            parse('speedmod ' .. id .. ' 0')
+        end
+    end
 }

@@ -1,7 +1,4 @@
-local users = {}
-for id = 1, 32 do
-    users[id] = {}
-end
+local users = ({...})[1]
 
 local msg = function(txt)
     msg('\169000255255[TEAM]: \169255255255' ..  txt)
@@ -54,7 +51,7 @@ local newTeam = function(name, r, g, b)
     self.invitations = {}
 
     function self:setOwner(id)
-        msg2(id, "You're new team owner!")
+        msg2(id, "You're now the new team owner!")
         self.owner = id
         return true
     end
@@ -98,7 +95,7 @@ local newTeam = function(name, r, g, b)
             msg2(pl, player(pl, 'name') .. ' has been removed from your team!')
         end
 
-        msg2(id, 'You has been kicked from team!')
+        msg2(id, 'You have been kicked from your team!')
     end
 
     function self:addInvitation(id)
@@ -155,12 +152,12 @@ local openMenu_teamList = function(id)
             if n_members == 0 then
                 team:setOwner(id)
                 team:addMember(id)
-                msg('Team ' .. team.name .. ' has been created! Click [F2] to join.')
+                msg('Team ' .. team.name .. ' has been created! Press [F2] to join.')
             else
                 removeInvitations(id)
                 team:addInvitation(id)
-                msg2(id, 'Team invitation sent to ' .. team.name .. ' Team.')
-                msg2(team.owner, player(id, 'name') .. ' wants to join your team@C')
+                msg2(id, 'Invitation request sent to ' .. team.name .. ' Team.')
+                msg2(team.owner, player(id, 'name') .. ' wants to join your team.@C')
             end
 
         end, not(n_members == 4))
