@@ -429,14 +429,14 @@ return
                 end
             end
 
-            if not br.player[id].ui.xpBar then
-                br.player[id].ui.xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
+            if not br.player[id].ui.images.xpBar then
+                br.player[id].ui.images.xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
             end
 
             if br.player[id].ui.lastInfo.exp ~= br.player[id].storedData.exp then
                 local barWidth = 128 * (levelData.progressNextLevel / levelData.neededForNextLevel)
                 br.funcs.geometry.moveLine(
-                    br.player[id].ui.xpBar, 
+                    br.player[id].ui.images.xpBar, 
                     br.config.ui.expBar.position[1] - 51,
                     br.config.ui.expBar.position[2],
                     br.config.ui.expBar.position[1] - 51 + barWidth,
@@ -446,8 +446,8 @@ return
 
             if player(id, 'health') > 0 then
                 -- Hp bar
-                if not br.player[id].ui.hpBarFrame then
-                    br.player[id].ui.hpBarFrame = image(
+                if not br.player[id].ui.images.hpBarFrame then
+                    br.player[id].ui.images.hpBarFrame = image(
                         br.config.ui.progressBarImage,
                         br.config.ui.hpBar.position[1],
                         br.config.ui.hpBar.position[2],
@@ -456,14 +456,14 @@ return
                     )
                 end
 
-                if not br.player[id].ui.hpBar then
-                    br.player[id].ui.hpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {255, 0, 0}, id)
+                if not br.player[id].ui.images.hpBar then
+                    br.player[id].ui.images.hpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {255, 0, 0}, id)
                 end
 
                 if br.player[id].ui.lastInfo.hp ~= player(id, 'health') then
                     local hpBarWidth = 128 * (player(id, 'health') / player(id, 'maxhealth'))
                     br.funcs.geometry.moveLine(
-                        br.player[id].ui.hpBar, 
+                        br.player[id].ui.images.hpBar, 
                         br.config.ui.hpBar.position[1] - 64, 
                         br.config.ui.hpBar.position[2], 
                         br.config.ui.hpBar.position[1] - 64 + hpBarWidth, 
@@ -477,8 +477,8 @@ return
                 end
 
                 -- Armor bar
-                if not br.player[id].ui.armorBarFrame then
-                    br.player[id].ui.armorBarFrame = image(
+                if not br.player[id].ui.images.armorBarFrame then
+                    br.player[id].ui.images.armorBarFrame = image(
                         br.config.ui.progressBarImage, 
                         br.config.ui.armorBar.position[1], 
                         br.config.ui.armorBar.position[2], 
@@ -487,21 +487,21 @@ return
                     )
                 end
 
-                if not br.player[id].ui.armorBar then
-                    br.player[id].ui.armorBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {0, 0, 0}, id)
+                if not br.player[id].ui.images.armorBar then
+                    br.player[id].ui.images.armorBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {0, 0, 0}, id)
                 end
 
                 if br.player[id].ui.lastInfo.armor ~= player(id, 'armor') then
                     local armorBarWidth = 128 * (player(id, 'armor') <= 100 and player(id, 'armor') / 100 or 1)
                     br.funcs.geometry.moveLine(
-                        br.player[id].ui.armorBar,
+                        br.player[id].ui.images.armorBar,
                         br.config.ui.armorBar.position[1] - 64,
                         br.config.ui.armorBar.position[2],
                         br.config.ui.armorBar.position[1] - 64 + armorBarWidth,
                         br.config.ui.armorBar.position[2]
                     )
                     br.funcs.geometry.colorLine(
-                        br.player[id].ui.armorBar, player(id, 'armor') <= 200 and {0, 0, 255} or {98, 98, 98}
+                        br.player[id].ui.images.armorBar, player(id, 'armor') <= 200 and {0, 0, 255} or {98, 98, 98}
                     )
 
                     local armorText = c .. '255165000'
@@ -530,8 +530,8 @@ return
                 end
 
                 -- Stamina bar
-                if not br.player[id].ui.stamBarFrame then
-                    br.player[id].ui.stamBarFrame = image(
+                if not br.player[id].ui.images.stamBarFrame then
+                    br.player[id].ui.images.stamBarFrame = image(
                         br.config.ui.bigProgressBarImage,
                         br.config.ui.stamBar.position[1],
                         br.config.ui.stamBar.position[2],
@@ -540,14 +540,17 @@ return
                     )
                 end
 
-                if not br.player[id].ui.stamBar then
-                    br.player[id].ui.stamBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {128, 255, 128}, id)
+                if not br.player[id].ui.images.stamBar then
+                    br.player[id].ui.images.stamBar = br.funcs.geometry.drawLine(
+                        0, 0, 0, 0, 12, 2, 0.5, {128, 255, 128}, 
+                        id
+                    )
                 end
 
                 if br.player[id].ui.lastInfo.stamina ~= br.player[id].stamina then
                     local stamBarWidth = 154 * (br.player[id].stamina) / 100
                     br.funcs.geometry.moveLine(
-                        br.player[id].ui.stamBar,
+                        br.player[id].ui.images.stamBar,
                         br.config.ui.stamBar.position[1] - 77,
                         br.config.ui.stamBar.position[2],
                         br.config.ui.stamBar.position[1] - 77 + stamBarWidth,
@@ -568,36 +571,36 @@ return
                 end
             else
                 -- Hp bar
-                if br.player[id].ui.hpBarFrame then
-                    freeimage(br.player[id].ui.hpBarFrame)
-                    br.player[id].ui.hpBarFrame = false
+                if br.player[id].ui.images.hpBarFrame then
+                    freeimage(br.player[id].ui.images.hpBarFrame)
+                    br.player[id].ui.images.hpBarFrame = false
                 end
 
-                if br.player[id].ui.hpBar then
-                    br.funcs.geometry.freeLine(br.player[id].ui.hpBar)
-                    br.player[id].ui.hpBar = false
+                if br.player[id].ui.images.hpBar then
+                    br.funcs.geometry.freeLine(br.player[id].ui.images.hpBar)
+                    br.player[id].ui.images.hpBar = false
                 end
 
                 -- Armor bar
-                if br.player[id].ui.armorBarFrame then
-                    freeimage(br.player[id].ui.armorBarFrame)
-                    br.player[id].ui.armorBarFrame = false
+                if br.player[id].ui.images.armorBarFrame then
+                    freeimage(br.player[id].ui.images.armorBarFrame)
+                    br.player[id].ui.images.armorBarFrame = false
                 end
 
-                if br.player[id].ui.armorBar then
-                    br.funcs.geometry.freeLine(br.player[id].ui.armorBar)
-                    br.player[id].ui.armorBar = false
+                if br.player[id].ui.images.armorBar then
+                    br.funcs.geometry.freeLine(br.player[id].ui.images.armorBar)
+                    br.player[id].ui.images.armorBar = false
                 end
 
                 -- Stamina bar
-                if br.player[id].ui.stamBarFrame then
-                    freeimage(br.player[id].ui.stamBarFrame)
-                    br.player[id].ui.stamBarFrame = false
+                if br.player[id].ui.images.stamBarFrame then
+                    freeimage(br.player[id].ui.images.stamBarFrame)
+                    br.player[id].ui.images.stamBarFrame = false
                 end
 
-                if br.player[id].ui.stamBar then
-                    br.funcs.geometry.freeLine(br.player[id].ui.stamBar)
-                    br.player[id].ui.stamBar = false
+                if br.player[id].ui.images.stamBar then
+                    br.funcs.geometry.freeLine(br.player[id].ui.images.stamBar)
+                    br.player[id].ui.images.stamBar = false
                 end
 
                 if br.player[id].ui.lastInfo.hp > 0 then
@@ -683,8 +686,11 @@ return
                 role             = 'player',
                 stamina          = 0,
                 sprinting        = false,
-                ui               = {},
                 moduleData       = {},
+
+                ui               = {
+                    images = {}
+                },
             }
         end,
 

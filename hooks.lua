@@ -122,8 +122,8 @@ return
                 br.player[pl].stamina = 100
                 br.player[pl].auraImage = false
 
-                for key, _ in pairs(br.player[pl].ui) do
-                    br.player[pl].ui[key] = false
+                for key, _ in pairs(br.player[pl].ui.images) do
+                    br.player[pl].ui.images[key] = false
                 end
 
                 local spawnx, spawny
