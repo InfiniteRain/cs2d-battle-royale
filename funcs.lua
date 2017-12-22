@@ -435,42 +435,58 @@ return
 
     player = {
         updateHud = function(id)
-            local expText, levelText
-            local levelData = br.funcs.player.getExpData(id)    
-            expText = string.char('169') .. '255165000' .. levelData.progressNextLevel .. '/' 
-                .. levelData.neededForNextLevel
-            parse('hudtxt2 ' .. id ..' 3 "'.. expText .. '" ' .. 
-                    br.config.ui.expBar.position[1] + 13 .. ' ' .. br.config.ui.expBar.position[2] - 8 .. ' 1')
-            levelText = string.char('169') .. '030144255' .. levelData.currentLevel
-            parse('hudtxt2 ' .. id ..' 5 "'.. levelText .. '" ' .. 
-                    br.config.ui.expBar.position[1] - 68 .. ' ' .. br.config.ui.expBar.position[2] - 8 .. ' 1')
+            br.player[id].ui.lastInfo = br.player[id].ui.lastInfo or {
+                hp = -1,
+                armor = -1,
+                exp = -1,
+                stamina = -1
+            }
 
+            local levelData, c = br.funcs.player.getExpData(id), string.char(169)
+            if br.player[id].ui.lastInfo.exp ~= br.player[id].storedData.exp then
+                local expText, levelText
+                expText = string.char('169') .. '255165000' .. levelData.progressNextLevel .. '/' 
+                    .. levelData.neededForNextLevel
+                parse('hudtxt2 ' .. id ..' 3 "'.. expText .. '" ' .. 
+                        br.config.ui.expBar.position[1] + 13 .. ' ' .. br.config.ui.expBar.position[2] - 8 .. ' 1')
+                levelText = string.char('169') .. '030144255' .. levelData.currentLevel
+                parse('hudtxt2 ' .. id ..' 5 "'.. levelText .. '" ' .. 
+                        br.config.ui.expBar.position[1] - 68 .. ' ' .. br.config.ui.expBar.position[2] - 8 .. ' 1')
+            end
 
             if player(id, 'steamid') == '0' then
-                local warnText = string.char(169) .. '255000000You\'re not logged into Steam! Your level progress will '
+                local warnText = c .. '255000000You\'re not logged into Steam! Your level progress will '
                         .. 'NOT be saved!'
-                parse('hudtxt2 ' .. id .. ' 4 "' .. warnText .. '" 415 415 1')
+                parse('hudtxt2 ' .. id .. ' 4 "' .. warnText .. '" 415 400 1')
             end
             
             local killedText = ''
             if br.player[id].inGame and br.player[id].killed then
-                killedText = string.char(169) .. '255000000You\'re DEAD. If you try to respawn, you will get instantly '
-                        .. 'killed!'
+                if br.player[id].ui.lastInfo.hp > 0 then
+                    killedText = c .. '255000000You\'re DEAD. If you try to respawn, you will get instantly '
+                            .. 'killed!'
+                    parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
+                end
+            else
+                if br.player[id].ui.lastInfo.hp <= 0 then
+                    parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
+                end
             end
-            parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
 
             if not br.player[id].ui.xpBar then
                 br.player[id].ui.xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
             end
 
-            local barWidth = 128 * (levelData.progressNextLevel / levelData.neededForNextLevel)
-            br.funcs.geometry.moveLine(
-                br.player[id].ui.xpBar, 
-                br.config.ui.expBar.position[1] - 51,
-                br.config.ui.expBar.position[2],
-                br.config.ui.expBar.position[1] - 51 + barWidth,
-                br.config.ui.expBar.position[2]
-            )
+            if br.player[id].ui.lastInfo.exp ~= br.player[id].storedData.exp then
+                local barWidth = 128 * (levelData.progressNextLevel / levelData.neededForNextLevel)
+                br.funcs.geometry.moveLine(
+                    br.player[id].ui.xpBar, 
+                    br.config.ui.expBar.position[1] - 51,
+                    br.config.ui.expBar.position[2],
+                    br.config.ui.expBar.position[1] - 51 + barWidth,
+                    br.config.ui.expBar.position[2]
+                )
+            end
 
             if player(id, 'health') > 0 then
                 -- Hp bar
@@ -488,19 +504,21 @@ return
                     br.player[id].ui.hpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {255, 0, 0}, id)
                 end
 
-                local hpBarWidth = 128 * (player(id, 'health') / player(id, 'maxhealth'))
-                br.funcs.geometry.moveLine(
-                    br.player[id].ui.hpBar, 
-                    br.config.ui.hpBar.position[1] - 64, 
-                    br.config.ui.hpBar.position[2], 
-                    br.config.ui.hpBar.position[1] - 64 + hpBarWidth, 
-                    br.config.ui.hpBar.position[2]
-                )
+                if br.player[id].ui.lastInfo.hp ~= player(id, 'health') then
+                    local hpBarWidth = 128 * (player(id, 'health') / player(id, 'maxhealth'))
+                    br.funcs.geometry.moveLine(
+                        br.player[id].ui.hpBar, 
+                        br.config.ui.hpBar.position[1] - 64, 
+                        br.config.ui.hpBar.position[2], 
+                        br.config.ui.hpBar.position[1] - 64 + hpBarWidth, 
+                        br.config.ui.hpBar.position[2]
+                    )
                 
-                local hpText = string.char(169) .. '255255255' ..
-                    player(id, 'health') .. '/' .. player(id, 'maxhealth')
-                parse('hudtxt2 ' .. id ..' 6 "'.. hpText .. '" '.. 
-                        br.config.ui.hpBar.position[1] ..' ' .. br.config.ui.hpBar.position[2] - 8 .. ' 1')
+                    local hpText = c .. '255255255' ..
+                        player(id, 'health') .. '/' .. player(id, 'maxhealth')
+                    parse('hudtxt2 ' .. id ..' 6 "'.. hpText .. '" '.. 
+                            br.config.ui.hpBar.position[1] ..' ' .. br.config.ui.hpBar.position[2] - 8 .. ' 1')
+                end
 
                 -- Armor bar
                 if not br.player[id].ui.armorBarFrame then
@@ -517,41 +535,43 @@ return
                     br.player[id].ui.armorBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {0, 0, 0}, id)
                 end
 
-                local armorBarWidth = 128 * (player(id, 'armor') <= 100 and player(id, 'armor') / 100 or 1)
-                br.funcs.geometry.moveLine(
-                    br.player[id].ui.armorBar,
-                    br.config.ui.armorBar.position[1] - 64,
-                    br.config.ui.armorBar.position[2],
-                    br.config.ui.armorBar.position[1] - 64 + armorBarWidth,
-                    br.config.ui.armorBar.position[2]
-                )
-                br.funcs.geometry.colorLine(
-                    br.player[id].ui.armorBar, player(id, 'armor') <= 200 and {0, 0, 255} or {98, 98, 98}
-                )
+                if br.player[id].ui.lastInfo.armor ~= player(id, 'armor') then
+                    local armorBarWidth = 128 * (player(id, 'armor') <= 100 and player(id, 'armor') / 100 or 1)
+                    br.funcs.geometry.moveLine(
+                        br.player[id].ui.armorBar,
+                        br.config.ui.armorBar.position[1] - 64,
+                        br.config.ui.armorBar.position[2],
+                        br.config.ui.armorBar.position[1] - 64 + armorBarWidth,
+                        br.config.ui.armorBar.position[2]
+                    )
+                    br.funcs.geometry.colorLine(
+                        br.player[id].ui.armorBar, player(id, 'armor') <= 200 and {0, 0, 255} or {98, 98, 98}
+                    )
 
-                local armorText = string.char(169) .. '255165000'
-                if player(id, 'armor') < 200 then
-                    armorText = player(id, 'armor') .. '/100'
-                else
-                    local armor = player(id, 'armor')
-                    if armor == 201 then
-                        armorText = armorText .. '25% reduction'
-                    elseif armor == 202 then
-                        armorText = armorText .. '50% reduction'
-                    elseif armor == 203 then
-                        armorText = armorText .. '75% reduction'
-                    elseif armor == 204 then
-                        armorText = armorText .. '50% reduction + heal'
-                    elseif armor == 205 then
-                        armorText = armorText .. '95% reduction'
-                    elseif armor == 206 then
-                        armorText = armorText .. 'stealth'
+                    local armorText = c .. '255165000'
+                    if player(id, 'armor') < 200 then
+                        armorText = player(id, 'armor') .. '/100'
                     else
-                        armotText = armorText .. '???'
+                        local armor = player(id, 'armor')
+                        if armor == 201 then
+                            armorText = armorText .. '25% reduction'
+                        elseif armor == 202 then
+                            armorText = armorText .. '50% reduction'
+                        elseif armor == 203 then
+                            armorText = armorText .. '75% reduction'
+                        elseif armor == 204 then
+                            armorText = armorText .. '50% reduction + heal'
+                        elseif armor == 205 then
+                            armorText = armorText .. '95% reduction'
+                        elseif armor == 206 then
+                            armorText = armorText .. 'stealth'
+                        else
+                            armotText = armorText .. '???'
+                        end
                     end
+                    parse('hudtxt2 ' .. id ..' 7 "'.. armorText .. '" ' .. 
+                            br.config.ui.armorBar.position[1] .. ' ' .. br.config.ui.armorBar.position[2] - 8 .. ' 1')
                 end
-                parse('hudtxt2 ' .. id ..' 7 "'.. armorText .. '" ' .. 
-                        br.config.ui.armorBar.position[1] .. ' ' .. br.config.ui.armorBar.position[2] - 8 .. ' 1')
 
                 -- Stamina bar
                 if not br.player[id].ui.stamBarFrame then
@@ -568,17 +588,28 @@ return
                     br.player[id].ui.stamBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {128, 255, 128}, id)
                 end
 
-                local stamBarWidth = 154 * (br.player[id].stamina) / 100
-                br.funcs.geometry.moveLine(
-                    br.player[id].ui.stamBar,
-                    br.config.ui.stamBar.position[1] - 77,
-                    br.config.ui.stamBar.position[2],
-                    br.config.ui.stamBar.position[1] - 77 + stamBarWidth,
-                    br.config.ui.stamBar.position[2])
+                if br.player[id].ui.lastInfo.stamina ~= br.player[id].stamina then
+                    local stamBarWidth = 154 * (br.player[id].stamina) / 100
+                    br.funcs.geometry.moveLine(
+                        br.player[id].ui.stamBar,
+                        br.config.ui.stamBar.position[1] - 77,
+                        br.config.ui.stamBar.position[2],
+                        br.config.ui.stamBar.position[1] - 77 + stamBarWidth,
+                        br.config.ui.stamBar.position[2])
 
-                local stamText = string.char(169) .. '064064064' .. math.floor(br.player[id].stamina) .. '/100'
-                parse('hudtxt2 ' .. id .. ' 8 "' .. stamText .. '" ' ..
-                        br.config.ui.stamBar.position[1] .. ' ' .. br.config.ui.stamBar.position[2] - 8 .. ' 1')
+                    local stamText = c .. '064064064' .. math.floor(br.player[id].stamina) .. '/100'
+                    parse('hudtxt2 ' .. id .. ' 8 "' .. stamText .. '" ' ..
+                            br.config.ui.stamBar.position[1] .. ' ' .. br.config.ui.stamBar.position[2] - 8 .. ' 1')
+                end
+
+                -- Controls info
+                if br.player[id].ui.lastInfo.hp <= 0 then
+                    local sprintText = c .. '255128000[SPACE] to sprint'
+                    parse('hudtxt2 ' .. id .. ' 9 "' .. sprintText .. '" 90 422 1')
+
+                    local cosmText = c .. '255128000[H] for cosmetics menu'
+                    parse('hudtxt2 ' .. id .. ' 10 "' .. cosmText .. '" 246 422 1')
+                end
             else
                 -- Hp bar
                 if br.player[id].ui.hpBarFrame then
@@ -591,8 +622,6 @@ return
                     br.player[id].ui.hpBar = false
                 end
 
-                parse('hudtxt2 ' .. id ..' 6 "" 0 0 1')
-
                 -- Armor bar
                 if br.player[id].ui.armorBarFrame then
                     freeimage(br.player[id].ui.armorBarFrame)
@@ -604,8 +633,32 @@ return
                     br.player[id].ui.armorBar = false
                 end
 
-                parse('hudtxt2 ' .. id ..' 7 "" 0 0 1')
+                -- Stamina bar
+                if br.player[id].ui.stamBarFrame then
+                    freeimage(br.player[id].ui.stamBarFrame)
+                    br.player[id].ui.stamBarFrame = false
+                end
+
+                if br.player[id].ui.stamBar then
+                    br.funcs.geometry.freeLine(br.player[id].ui.stamBar)
+                    br.player[id].ui.stamBar = false
+                end
+
+                if br.player[id].ui.lastInfo.hp > 0 then
+                    parse('hudtxt2 ' .. id ..' 6 "" 0 0 1')
+                    parse('hudtxt2 ' .. id ..' 7 "" 0 0 1')
+                    parse('hudtxt2 ' .. id ..' 8 "" 0 0 1')
+                    parse('hudtxt2 ' .. id ..' 9 "" 0 0 1')
+                    parse('hudtxt2 ' .. id ..' 10 "" 0 0 1')
+                end
             end
+
+            br.player[id].ui.lastInfo = {
+                hp = player(id, 'health'),
+                armor = player(id, 'armor'),
+                exp = br.player[id].storedData.exp,
+                stamina = br.player[id].stamina
+            }
         end,
 
         getExpData = function(id)
