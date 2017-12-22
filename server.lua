@@ -19,7 +19,6 @@ br.commands = assert(loadfile('sys/lua/battle_royale/commands.lua'))()
 br.funcs    = assert(loadfile('sys/lua/battle_royale/funcs.lua'))()
 br.hooks    = assert(loadfile('sys/lua/battle_royale/hooks.lua'))()
 br.settings = assert(loadfile('sys/lua/battle_royale/settings.lua'))()
-br.team     = assert(loadfile('sys/lua/battle_royale/team.lua'))(br.funcs.player.proxyTable('team'))
 
 for hook, _ in pairs(br.hooks) do
     addhook(hook, 'br.hooks.' .. hook)
