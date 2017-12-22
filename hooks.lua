@@ -112,20 +112,22 @@ return
         )
         br.shrinkStarted = false
 
-        br.expBar = image(br.config.expBarImage, 415, 430, 2)
+        br.expBar = image(
+            br.config.ui.expBarImage,
+            br.config.ui.expBar.position[1],
+            br.config.ui.expBar.position[2],
+            2
+        )
 
         for _, pl in pairs(player(0, 'table')) do
             if br.player[pl].inGame then
                 br.player[pl].killed = false
-                br.player[pl].auraImage = false
-                br.player[pl].xpBar = false
-                br.player[pl].hpBar = false
-                br.player[pl].hpBarFrame = false
-                br.player[pl].armorBar = false
-                br.player[pl].armorBarFrame = false
-                br.player[pl].stamBar = false
-                br.player[pl].stamBarFrame = false
                 br.player[pl].stamina = 100
+                br.player[pl].auraImage = false
+
+                for key, _ in pairs(br.player[pl].ui) do
+                    br.player[pl].ui[key] = false
+                end
 
                 local spawnx, spawny
                 repeat
@@ -155,7 +157,7 @@ return
 
         for _, train in pairs(br.trains) do
             train.image = image(train.config.image, 0, 0, 3)
-            imagealpha(train.image, 1)
+            imagealpha(train.image, 0)
 
             train.running = false
             train.startedAt = 0
@@ -220,7 +222,7 @@ return
                     end
                 end
 
-                if player(pl, 'armor') == 204 then
+                if player(pl, 'armor') == 204 or not br.player[pl].sprinting then
                     br.funcs.timer.init(10, br.funcs.player.updateHud, pl)
                 end
 
@@ -229,8 +231,6 @@ return
                     if br.player[pl].stamina >= 100 then
                         br.player[pl].stamina = 100
                     end
-
-                    br.funcs.player.updateHud(pl)
                 end
             end
 

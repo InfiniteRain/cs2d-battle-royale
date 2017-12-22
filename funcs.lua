@@ -439,9 +439,11 @@ return
             local levelData = br.funcs.player.getExpData(id)    
             expText = string.char('169') .. '255165000' .. levelData.progressNextLevel .. '/' 
                 .. levelData.neededForNextLevel
-            parse('hudtxt2 ' .. id ..' 3 "'.. expText .. '" 428 422 1')
+            parse('hudtxt2 ' .. id ..' 3 "'.. expText .. '" ' .. 
+                    br.config.ui.expBar.position[1] + 13 .. ' ' .. br.config.ui.expBar.position[2] - 8 .. ' 1')
             levelText = string.char('169') .. '030144255' .. levelData.currentLevel
-            parse('hudtxt2 ' .. id ..' 5 "'.. levelText .. '" 347 422 1')
+            parse('hudtxt2 ' .. id ..' 5 "'.. levelText .. '" ' .. 
+                    br.config.ui.expBar.position[1] - 68 .. ' ' .. br.config.ui.expBar.position[2] - 8 .. ' 1')
 
 
             if player(id, 'steamid') == '0' then
@@ -457,43 +459,74 @@ return
             end
             parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
 
-            if not br.player[id].xpBar then
-                br.player[id].xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
+            if not br.player[id].ui.xpBar then
+                br.player[id].ui.xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
             end
 
             local barWidth = 128 * (levelData.progressNextLevel / levelData.neededForNextLevel)
-            br.funcs.geometry.moveLine(br.player[id].xpBar, 364, 430, 364 + barWidth, 430)
+            br.funcs.geometry.moveLine(
+                br.player[id].ui.xpBar, 
+                br.config.ui.expBar.position[1] - 51,
+                br.config.ui.expBar.position[2],
+                br.config.ui.expBar.position[1] - 51 + barWidth,
+                br.config.ui.expBar.position[2]
+            )
 
             if player(id, 'health') > 0 then
                 -- Hp bar
-                if not br.player[id].hpBarFrame then
-                    br.player[id].hpBarFrame = image(br.config.progressBarImage, 90, 430, 2, id)
+                if not br.player[id].ui.hpBarFrame then
+                    br.player[id].ui.hpBarFrame = image(
+                        br.config.ui.progressBarImage,
+                        br.config.ui.hpBar.position[1],
+                        br.config.ui.hpBar.position[2],
+                        2,
+                        id
+                    )
                 end
 
-                if not br.player[id].hpBar then
-                    br.player[id].hpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {255, 0, 0}, id)
+                if not br.player[id].ui.hpBar then
+                    br.player[id].ui.hpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {255, 0, 0}, id)
                 end
 
                 local hpBarWidth = 128 * (player(id, 'health') / player(id, 'maxhealth'))
-                br.funcs.geometry.moveLine(br.player[id].hpBar, 26, 430, 26 + hpBarWidth, 430)
+                br.funcs.geometry.moveLine(
+                    br.player[id].ui.hpBar, 
+                    br.config.ui.hpBar.position[1] - 64, 
+                    br.config.ui.hpBar.position[2], 
+                    br.config.ui.hpBar.position[1] - 64 + hpBarWidth, 
+                    br.config.ui.hpBar.position[2]
+                )
                 
                 local hpText = string.char(169) .. '255255255' ..
                     player(id, 'health') .. '/' .. player(id, 'maxhealth')
-                parse('hudtxt2 ' .. id ..' 6 "'.. hpText .. '" 90 422 1')
+                parse('hudtxt2 ' .. id ..' 6 "'.. hpText .. '" '.. 
+                        br.config.ui.hpBar.position[1] ..' ' .. br.config.ui.hpBar.position[2] - 8 .. ' 1')
 
                 -- Armor bar
-                if not br.player[id].armorBarFrame then
-                    br.player[id].armorBarFrame = image(br.config.progressBarImage, 90, 450, 2, id)
+                if not br.player[id].ui.armorBarFrame then
+                    br.player[id].ui.armorBarFrame = image(
+                        br.config.ui.progressBarImage, 
+                        br.config.ui.armorBar.position[1], 
+                        br.config.ui.armorBar.position[2], 
+                        2, 
+                        id
+                    )
                 end
 
-                if not br.player[id].armorBar then
-                    br.player[id].armorBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {0, 0, 0}, id)
+                if not br.player[id].ui.armorBar then
+                    br.player[id].ui.armorBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {0, 0, 0}, id)
                 end
 
                 local armorBarWidth = 128 * (player(id, 'armor') <= 100 and player(id, 'armor') / 100 or 1)
-                br.funcs.geometry.moveLine(br.player[id].armorBar, 26, 450, 26 + armorBarWidth, 450)
+                br.funcs.geometry.moveLine(
+                    br.player[id].ui.armorBar,
+                    br.config.ui.armorBar.position[1] - 64,
+                    br.config.ui.armorBar.position[2],
+                    br.config.ui.armorBar.position[1] - 64 + armorBarWidth,
+                    br.config.ui.armorBar.position[2]
+                )
                 br.funcs.geometry.colorLine(
-                    br.player[id].armorBar, player(id, 'armor') <= 200 and {0, 0, 255} or {98, 98, 98}
+                    br.player[id].ui.armorBar, player(id, 'armor') <= 200 and {0, 0, 255} or {98, 98, 98}
                 )
 
                 local armorText = string.char(169) .. '255165000'
@@ -517,48 +550,61 @@ return
                         armotText = armorText .. '???'
                     end
                 end
-                parse('hudtxt2 ' .. id ..' 7 "'.. armorText .. '" 90 442 1')
+                parse('hudtxt2 ' .. id ..' 7 "'.. armorText .. '" ' .. 
+                        br.config.ui.armorBar.position[1] .. ' ' .. br.config.ui.armorBar.position[2] - 8 .. ' 1')
 
                 -- Stamina bar
-                if not br.player[id].stamBarFrame then
-                    br.player[id].stamBarFrame = image(br.config.bigProgressBarImage, 415, 450, 2, id)
+                if not br.player[id].ui.stamBarFrame then
+                    br.player[id].ui.stamBarFrame = image(
+                        br.config.ui.bigProgressBarImage,
+                        br.config.ui.stamBar.position[1],
+                        br.config.ui.stamBar.position[2],
+                        2,
+                        id
+                    )
                 end
 
-                if not br.player[id].stamBar then
-                    br.player[id].stamBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {128, 255, 128}, id)
+                if not br.player[id].ui.stamBar then
+                    br.player[id].ui.stamBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {128, 255, 128}, id)
                 end
 
                 local stamBarWidth = 154 * (br.player[id].stamina) / 100
-                br.funcs.geometry.moveLine(br.player[id].stamBar, 338, 450, 338 + stamBarWidth, 450)
+                br.funcs.geometry.moveLine(
+                    br.player[id].ui.stamBar,
+                    br.config.ui.stamBar.position[1] - 77,
+                    br.config.ui.stamBar.position[2],
+                    br.config.ui.stamBar.position[1] - 77 + stamBarWidth,
+                    br.config.ui.stamBar.position[2])
 
                 local stamText = string.char(169) .. '064064064' .. math.floor(br.player[id].stamina) .. '/100'
-                parse('hudtxt2 ' .. id .. ' 8 "' .. stamText .. '" 415 442 1')
+                parse('hudtxt2 ' .. id .. ' 8 "' .. stamText .. '" ' ..
+                        br.config.ui.stamBar.position[1] .. ' ' .. br.config.ui.stamBar.position[2] - 8 .. ' 1')
             else
                 -- Hp bar
-                if br.player[id].hpBarFrame then
-                    freeimage(br.player[id].hpBarFrame)
-                    br.player[id].hpBarFrame = false
+                if br.player[id].ui.hpBarFrame then
+                    freeimage(br.player[id].ui.hpBarFrame)
+                    br.player[id].ui.hpBarFrame = false
                 end
 
-                if br.player[id].hpBar then
-                    br.funcs.geometry.freeLine(br.player[id].hpBar)
-                    br.player[id].hpBar = false
+                if br.player[id].ui.hpBar then
+                    br.funcs.geometry.freeLine(br.player[id].ui.hpBar)
+                    br.player[id].ui.hpBar = false
                 end
 
-                parse('hudtxt2 ' .. id ..' 6 "" 90 422 1')
+                parse('hudtxt2 ' .. id ..' 6 "" 0 0 1')
 
                 -- Armor bar
-                if br.player[id].armorBarFrame then
-                    freeimage(br.player[id].armorBarFrame)
-                    br.player[id].armorBarFrame = false
+                if br.player[id].ui.armorBarFrame then
+                    freeimage(br.player[id].ui.armorBarFrame)
+                    br.player[id].ui.armorBarFrame = false
                 end
 
-                if br.player[id].armorBar then
-                    br.funcs.geometry.freeLine(br.player[id].armorBar)
-                    br.player[id].armorBar = false
+                if br.player[id].ui.armorBar then
+                    br.funcs.geometry.freeLine(br.player[id].ui.armorBar)
+                    br.player[id].ui.armorBar = false
                 end
 
-                parse('hudtxt2 ' .. id ..' 7 "" 90 422 1')
+                parse('hudtxt2 ' .. id ..' 7 "" 0 0 1')
             end
         end,
 
@@ -626,16 +672,10 @@ return
                 storedData       = {},
                 loadedStoredData = false,
                 role             = 'player',
-                xpBar            = false,
-                hpBar            = false,
-                hpBarFrame       = false,
-                armorBar         = false,
-                armorBarFrame    = false,
-                stamBar          = false,
-                stamBarFrame     = false,
                 stamina          = 0,
                 sprinting        = false,
-                moduleData       = {}
+                ui               = {},
+                moduleData       = {},
             }
         end,
 
@@ -684,6 +724,10 @@ return
                         br.player[key].moduleData[moduleName] = br.player[key].moduleData[moduleName] or {}
                         return br.player[key].moduleData[moduleName]
                     end
+                end,
+
+                __newindex = function(tbl, key, value)
+                    rawset(br.player[key].moduleData[moduleName], key, value)
                 end
             })
         end
