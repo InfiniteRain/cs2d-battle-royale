@@ -14,11 +14,6 @@ br = {
     trains           = {}
 }
 
--- lib
-br.timer    = assert(loadfile('sys/lua/battle_royale/lib/MikuAuahDark/timerEx.lua'))()
-br.class    = assert(loadfile('sys/lua/battle_royale/lib/Gajos/class.lua'))()
-br.menu     = assert(loadfile('sys/lua/battle_royale/lib/Gajos/menu.lua'))()
-
 br.config   = assert(loadfile('sys/lua/battle_royale/config.lua'))()
 br.commands = assert(loadfile('sys/lua/battle_royale/commands.lua'))()
 br.funcs    = assert(loadfile('sys/lua/battle_royale/funcs.lua'))()
@@ -40,13 +35,6 @@ end
 
 for i = 1, 32 do
     br.player[i] = br.funcs.player.getDataSchema()
-end
-
-for _, v in pairs(br.config.auras) do
-    local name = v[1]
-    local r, g, b = v[2], v[3], v[4]
-
-    br.teams[name] = br.team.new(name, r, g, b)
 end
 
 for pattern, conf in pairs(br.config.maps) do
