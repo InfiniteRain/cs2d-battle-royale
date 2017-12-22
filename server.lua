@@ -25,7 +25,7 @@ for hook, _ in pairs(br.hooks) do
 end
 
 addbind('space')
-addbind('shift')
+addbind('H')
 
 for setting, values in pairs(br.settings) do
     local vals = (type(values) ~= 'table' and {values} or values)

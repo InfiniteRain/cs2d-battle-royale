@@ -125,6 +125,7 @@ return
                 for key, _ in pairs(br.player[pl].ui.images) do
                     br.player[pl].ui.images[key] = false
                 end
+                br.player[pl].ui.lastInfo = false
 
                 local spawnx, spawny
                 repeat
@@ -431,6 +432,10 @@ return
                 br.player[id].sprinting = false
                 parse('speedmod ' .. id .. ' 0')
             end
+        end
+
+        if key == 'H' and state == 1 then
+            msg2(id, string.char(169) .. '255000000Cosmetics are coming soon!')
         end
     end,
 
