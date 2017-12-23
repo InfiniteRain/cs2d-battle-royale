@@ -35,19 +35,25 @@ return
 
     team = function(id, team)
         if player(id, 'team') == 0 and team > 0 then
-            br.player[id].inGame = true
-            br.player[id].killed = true
-            br.funcs.player.updateHud(id)
+            if br.gracePeriodTimer <= 0 then
+                br.player[id].inGame = true
+                br.player[id].killed = true
+                br.funcs.player.updateHud(id)
 
-            local activePlayers = 0
-            for _, pl in pairs(player(0, 'table')) do
-                if br.player[pl].inGame then
-                    activePlayers = activePlayers + 1
+                local activePlayers = 0
+                for _, pl in pairs(player(0, 'table')) do
+                    if br.player[pl].inGame then
+                        activePlayers = activePlayers + 1
+                    end
                 end
-            end
 
-            if activePlayers <= 2 then
-                parse('restart')
+                if activePlayers <= 2 then
+                    parse('restart')
+                end
+            else
+                br.player[id].inGame = true
+                br.player[id].killed = false
+                br.funcs.timer.init(10, br.funcs.player.randomSpawn, id)
             end
         elseif player(id, 'team') > 0 and team == 0 then
             br.player[id].inGame = false
@@ -119,21 +125,16 @@ return
         for _, pl in pairs(player(0, 'table')) do
             if br.player[pl].inGame then
                 br.player[pl].killed = false
+                br.player[pl].spawnPosition = false
                 br.player[pl].stamina = 100
                 br.player[pl].auraImage = false
-
+                br.player[pl].ui.lastInfo = false
+            
                 for key, _ in pairs(br.player[pl].ui.images) do
                     br.player[pl].ui.images[key] = false
                 end
-                br.player[pl].ui.lastInfo = false
 
-                local spawnx, spawny
-                repeat
-                    spawnx = math.random(0, map 'xsize')
-                    spawny = math.random(0, map 'ysize')
-                until br.funcs.game.checkIfSpawnable(spawnx, spawny)
-
-                parse('spawnplayer ' .. pl .. ' ' .. spawnx * 32 + 16 .. ' ' .. spawny * 32 + 16)
+                br.funcs.player.randomSpawn(pl)
                 br.funcs.player.updateHud(pl)
                 br.funcs.player.updateAura(pl)
             end
@@ -156,16 +157,20 @@ return
     end,
 
     die = function(victim, killer)
-        br.player[victim].killed = true
-        if killer > 0 and killer ~= victim then
-            br.funcs.player.addExp(killer, 150)
-            br.funcs.player.updateHud(killer)
-        end
+        if br.gracePeriodTimer > 0 then 
+            br.funcs.timer.init(10, br.funcs.player.randomSpawn, victim)
+        else
+            br.player[victim].killed = true
+            if killer > 0 and killer ~= victim then
+                br.funcs.player.addExp(killer, 150)
+                br.funcs.player.updateHud(killer)
+            end
 
-        parse('sv_sound "' .. br.config.killSoundFile .. '"')
-        br.funcs.player.updateHud(victim)
-        br.funcs.game.checkIfEnded()
-        br.funcs.game.updateGlobalHudTexts()
+            parse('sv_sound "' .. br.config.killSoundFile .. '"')
+            br.funcs.player.updateHud(victim)
+            br.funcs.game.checkIfEnded()
+            br.funcs.game.updateGlobalHudTexts()
+        end
     end,
 
     second = function()
@@ -317,6 +322,7 @@ return
         if br.player[id].killed then
             parse('killplayer ' .. id)
         end
+        br.funcs.player.updateHud(id)
 
         return 'x'
     end,

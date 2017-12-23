@@ -390,6 +390,29 @@ return
     },
 
     player = {
+        randomSpawn = function(id)
+            if br.player[id].killed or not br.player[id].inGame then
+                error(
+                    'this player cannot be spawned (k=' 
+                            .. br.player[id].killed .. ' | iG=' .. br.player[id].inGame .. ')',
+                    2
+                )
+            end
+
+            if not br.player[id].spawnPosition then
+                local spawnx, spawny
+                repeat
+                    spawnx = math.random(0, map 'xsize')
+                    spawny = math.random(0, map 'ysize')
+                until br.funcs.game.checkIfSpawnable(spawnx, spawny)
+
+                br.player[id].spawnPosition = {spawnx, spawny}
+            end
+
+            parse('spawnplayer ' .. id .. ' ' 
+                    .. br.player[id].spawnPosition[1] * 32 + 16 .. ' ' .. br.player[id].spawnPosition[2] * 32 + 16)
+        end,
+
         updateHud = function(id)
             br.player[id].ui.lastInfo = br.player[id].ui.lastInfo or {
                 hp = -1,
@@ -680,17 +703,17 @@ return
             return {
                 killed           = true,
                 inGame           = false,
+                spawnPosition    = false,
+                
                 auraImage        = false,
+                stamina          = 0,
+                sprinting        = false,
+
                 storedData       = {},
                 loadedStoredData = false,
                 role             = 'player',
-                stamina          = 0,
-                sprinting        = false,
-                moduleData       = {},
 
-                ui               = {
-                    images = {}
-                },
+                ui               = {images = {}},
             }
         end,
 
