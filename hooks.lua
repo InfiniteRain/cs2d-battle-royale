@@ -159,7 +159,7 @@ return
 
     die = function(victim, killer)
         if br.gracePeriodTimer > 0 then 
-            br.player[id].ui.lastInfo = false
+            br.player[victim].ui.lastInfo = false
             br.funcs.timer.init(10, br.funcs.player.randomSpawn, victim)
         else
             br.player[victim].killed = true
