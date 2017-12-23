@@ -130,6 +130,7 @@ return
                 y1 = y1, 
                 x2 = x2, 
                 y2 = y2,
+                color = color,
                 width = width
             }
         end,
@@ -146,6 +147,15 @@ return
 
             imagepos(line.image, x, y, angle)
             imagescale(line.image, (1 / 32) * line.width, distance / 32)
+        end,
+
+        colorLine = function(line, color)
+            if color[1] == line.color[1] and color[2] == line.color[2] and color[3] == line.color[3] then
+                return
+            end
+
+            line.color = color
+            imagecolor(line.image, color[1], color[2], color[3])
         end,
 
         freeLine = function(line)
@@ -344,50 +354,6 @@ return
                     br.roundEnded = true
                     parse('trigger draw')
                     parse('restart 5')
-                else
-                    local name
-
-                    local aliveTeams = function()
-                        local counter = 0
-                        for _, team in pairs(br.teams) do
-                            if br.team.isAliveTeam(team) then
-                                name = team.name .. ' Team'
-                                counter = counter + 1
-                            end
-                        end
-                        return counter
-                    end
-
-                    local playersWithoutTeam = function()
-                        local counter = 0
-                        for _, pl in pairs(player(0, 'tableliving')) do
-                            if not br.team.getTeam(pl) then
-                                counter = counter + 1
-                            end
-                        end
-                        return counter
-                    end
-
-                    if aliveTeams() == 1 and playersWithoutTeam() == 0 then
-                        text = name .. ' has WON the game!'
-                        br.funcs.player.addExp(lastAlivePlayerId, 450)
-                        
-                        for i = 1, 5 do
-                            msg(
-                                string.char(169) .. 
-                                math.random(100, 255) ..
-                                math.random(100, 255) ..
-                                math.random(100, 255) ..
-                                text ..
-                                string.rep(' ', i) ..
-                                '@C'
-                            )
-                        end
-
-                        br.roundEnded = true
-                        parse('trigger draw')
-                        parse('restart 5')
-                    end
                 end
             end
         end,
@@ -424,35 +390,257 @@ return
     },
 
     player = {
-        updateHud = function(id)
-            local expText, levelText
-            local levelData = br.funcs.player.getExpData(id)    
-            expText = string.char('169') .. '255165000' .. levelData.progressNextLevel .. '/' 
-                .. levelData.neededForNextLevel
-            parse('hudtxt2 ' .. id ..' 3 "'.. expText .. '" 428 422 1')
-            levelText = string.char('169') .. '030144255' .. levelData.currentLevel
-            parse('hudtxt2 ' .. id ..' 5 "'.. levelText .. '" 347 422 1')
+        randomSpawn = function(id)
+            if br.player[id].killed or not br.player[id].inGame then
+                error(
+                    'this player cannot be spawned (k=' 
+                            .. br.player[id].killed .. ' | iG=' .. br.player[id].inGame .. ')',
+                    2
+                )
+            end
 
+            if not br.player[id].spawnPosition then
+                local spawnx, spawny
+                repeat
+                    spawnx = math.random(0, map 'xsize')
+                    spawny = math.random(0, map 'ysize')
+                until br.funcs.game.checkIfSpawnable(spawnx, spawny)
+
+                br.player[id].spawnPosition = {spawnx, spawny}
+            end
+
+            parse('spawnplayer ' .. id .. ' ' 
+                    .. br.player[id].spawnPosition[1] * 32 + 16 .. ' ' .. br.player[id].spawnPosition[2] * 32 + 16)
+        end,
+
+        updateHud = function(id)
+            br.player[id].ui.lastInfo = br.player[id].ui.lastInfo or {
+                hp = -1,
+                armor = -1,
+                exp = -1,
+                stamina = -1
+            }
+
+            local levelData, c = br.funcs.player.getExpData(id), string.char(169)
+            if br.player[id].ui.lastInfo.exp ~= br.player[id].storedData.exp then
+                local expText, levelText
+                expText = string.char('169') .. '255165000' .. levelData.progressNextLevel .. '/' 
+                    .. levelData.neededForNextLevel
+                parse('hudtxt2 ' .. id ..' 3 "'.. expText .. '" ' .. 
+                        br.config.ui.expBar.position[1] + 13 .. ' ' .. br.config.ui.expBar.position[2] - 8 .. ' 1')
+                levelText = string.char('169') .. '030144255' .. levelData.currentLevel
+                parse('hudtxt2 ' .. id ..' 5 "'.. levelText .. '" ' .. 
+                        br.config.ui.expBar.position[1] - 68 .. ' ' .. br.config.ui.expBar.position[2] - 8 .. ' 1')
+            end
 
             if player(id, 'steamid') == '0' then
-                local warnText = string.char(169) .. '255000000You\'re not logged into Steam! Your level progress will '
+                local warnText = c .. '255000000You\'re not logged into Steam! Your level progress will '
                         .. 'NOT be saved!'
-                parse('hudtxt2 ' .. id .. ' 4 "' .. warnText .. '" 415 415 1')
+                parse('hudtxt2 ' .. id .. ' 4 "' .. warnText .. '" 415 400 1')
             end
             
             local killedText = ''
             if br.player[id].inGame and br.player[id].killed then
-                killedText = string.char(169) .. '255000000You\'re DEAD. If you try to respawn, you will get instantly '
-                        .. 'killed!'
+                if br.player[id].ui.lastInfo.hp > 0 then
+                    killedText = c .. '255000000You\'re DEAD. If you try to respawn, you will get instantly '
+                            .. 'killed!'
+                    parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
+                end
+            else
+                if br.player[id].ui.lastInfo.hp <= 0 then
+                    parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
+                end
             end
-            parse('hudtxt2 ' .. id ..' 0 "' .. killedText .. '" 415 35 1')
 
-            if not br.player[id].xpBar then
-                br.player[id].xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
+            if not br.player[id].ui.images.xpBar then
+                br.player[id].ui.images.xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
             end
 
-            local barWidth = 128 * (levelData.progressNextLevel / levelData.neededForNextLevel)
-            br.funcs.geometry.moveLine(br.player[id].xpBar, 364, 430, 364 + barWidth, 430)
+            if br.player[id].ui.lastInfo.exp ~= br.player[id].storedData.exp then
+                local barWidth = 128 * (levelData.progressNextLevel / levelData.neededForNextLevel)
+                br.funcs.geometry.moveLine(
+                    br.player[id].ui.images.xpBar, 
+                    br.config.ui.expBar.position[1] - 51,
+                    br.config.ui.expBar.position[2],
+                    br.config.ui.expBar.position[1] - 51 + barWidth,
+                    br.config.ui.expBar.position[2]
+                )
+            end
+
+            if player(id, 'health') > 0 then
+                -- Hp bar
+                if not br.player[id].ui.images.hpBarFrame then
+                    br.player[id].ui.images.hpBarFrame = image(
+                        br.config.ui.progressBarImage,
+                        br.config.ui.hpBar.position[1],
+                        br.config.ui.hpBar.position[2],
+                        2,
+                        id
+                    )
+                end
+
+                if not br.player[id].ui.images.hpBar then
+                    br.player[id].ui.images.hpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {255, 0, 0}, id)
+                end
+
+                if br.player[id].ui.lastInfo.hp ~= player(id, 'health') then
+                    local hpBarWidth = 128 * (player(id, 'health') / player(id, 'maxhealth'))
+                    br.funcs.geometry.moveLine(
+                        br.player[id].ui.images.hpBar, 
+                        br.config.ui.hpBar.position[1] - 64, 
+                        br.config.ui.hpBar.position[2], 
+                        br.config.ui.hpBar.position[1] - 64 + hpBarWidth, 
+                        br.config.ui.hpBar.position[2]
+                    )
+                
+                    local hpText = c .. '255255255' ..
+                        player(id, 'health') .. '/' .. player(id, 'maxhealth')
+                    parse('hudtxt2 ' .. id ..' 6 "'.. hpText .. '" '.. 
+                            br.config.ui.hpBar.position[1] ..' ' .. br.config.ui.hpBar.position[2] - 8 .. ' 1')
+                end
+
+                -- Armor bar
+                if not br.player[id].ui.images.armorBarFrame then
+                    br.player[id].ui.images.armorBarFrame = image(
+                        br.config.ui.progressBarImage, 
+                        br.config.ui.armorBar.position[1], 
+                        br.config.ui.armorBar.position[2], 
+                        2, 
+                        id
+                    )
+                end
+
+                if not br.player[id].ui.images.armorBar then
+                    br.player[id].ui.images.armorBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {0, 0, 0}, id)
+                end
+
+                if br.player[id].ui.lastInfo.armor ~= player(id, 'armor') then
+                    local armorBarWidth = 128 * (player(id, 'armor') <= 100 and player(id, 'armor') / 100 or 1)
+                    br.funcs.geometry.moveLine(
+                        br.player[id].ui.images.armorBar,
+                        br.config.ui.armorBar.position[1] - 64,
+                        br.config.ui.armorBar.position[2],
+                        br.config.ui.armorBar.position[1] - 64 + armorBarWidth,
+                        br.config.ui.armorBar.position[2]
+                    )
+                    br.funcs.geometry.colorLine(
+                        br.player[id].ui.images.armorBar, player(id, 'armor') <= 200 and {0, 0, 255} or {98, 98, 98}
+                    )
+
+                    local armorText = c .. '255165000'
+                    if player(id, 'armor') < 200 then
+                        armorText = player(id, 'armor') .. '/100'
+                    else
+                        local armor = player(id, 'armor')
+                        if armor == 201 then
+                            armorText = armorText .. '25% reduction'
+                        elseif armor == 202 then
+                            armorText = armorText .. '50% reduction'
+                        elseif armor == 203 then
+                            armorText = armorText .. '75% reduction'
+                        elseif armor == 204 then
+                            armorText = armorText .. '50% reduction + heal'
+                        elseif armor == 205 then
+                            armorText = armorText .. '95% reduction'
+                        elseif armor == 206 then
+                            armorText = armorText .. 'stealth'
+                        else
+                            armotText = armorText .. '???'
+                        end
+                    end
+                    parse('hudtxt2 ' .. id ..' 7 "'.. armorText .. '" ' .. 
+                            br.config.ui.armorBar.position[1] .. ' ' .. br.config.ui.armorBar.position[2] - 8 .. ' 1')
+                end
+
+                -- Stamina bar
+                if not br.player[id].ui.images.stamBarFrame then
+                    br.player[id].ui.images.stamBarFrame = image(
+                        br.config.ui.bigProgressBarImage,
+                        br.config.ui.stamBar.position[1],
+                        br.config.ui.stamBar.position[2],
+                        2,
+                        id
+                    )
+                end
+
+                if not br.player[id].ui.images.stamBar then
+                    br.player[id].ui.images.stamBar = br.funcs.geometry.drawLine(
+                        0, 0, 0, 0, 12, 2, 0.5, {128, 255, 128}, 
+                        id
+                    )
+                end
+
+                if br.player[id].ui.lastInfo.stamina ~= br.player[id].stamina then
+                    local stamBarWidth = 154 * (br.player[id].stamina) / 100
+                    br.funcs.geometry.moveLine(
+                        br.player[id].ui.images.stamBar,
+                        br.config.ui.stamBar.position[1] - 77,
+                        br.config.ui.stamBar.position[2],
+                        br.config.ui.stamBar.position[1] - 77 + stamBarWidth,
+                        br.config.ui.stamBar.position[2])
+
+                    local stamText = c .. '064064064' .. math.floor(br.player[id].stamina) .. '/100'
+                    parse('hudtxt2 ' .. id .. ' 8 "' .. stamText .. '" ' ..
+                            br.config.ui.stamBar.position[1] .. ' ' .. br.config.ui.stamBar.position[2] - 8 .. ' 1')
+                end
+
+                -- Controls info
+                if br.player[id].ui.lastInfo.hp <= 0 then
+                    local sprintText = c .. '255128000[SPACE] to sprint'
+                    parse('hudtxt2 ' .. id .. ' 9 "' .. sprintText .. '" 90 422 1')
+
+                    local cosmText = c .. '255128000[H] for cosmetics menu'
+                    parse('hudtxt2 ' .. id .. ' 10 "' .. cosmText .. '" 246 422 1')
+                end
+            else
+                -- Hp bar
+                if br.player[id].ui.images.hpBarFrame then
+                    freeimage(br.player[id].ui.images.hpBarFrame)
+                    br.player[id].ui.images.hpBarFrame = false
+                end
+
+                if br.player[id].ui.images.hpBar then
+                    br.funcs.geometry.freeLine(br.player[id].ui.images.hpBar)
+                    br.player[id].ui.images.hpBar = false
+                end
+
+                -- Armor bar
+                if br.player[id].ui.images.armorBarFrame then
+                    freeimage(br.player[id].ui.images.armorBarFrame)
+                    br.player[id].ui.images.armorBarFrame = false
+                end
+
+                if br.player[id].ui.images.armorBar then
+                    br.funcs.geometry.freeLine(br.player[id].ui.images.armorBar)
+                    br.player[id].ui.images.armorBar = false
+                end
+
+                -- Stamina bar
+                if br.player[id].ui.images.stamBarFrame then
+                    freeimage(br.player[id].ui.images.stamBarFrame)
+                    br.player[id].ui.images.stamBarFrame = false
+                end
+
+                if br.player[id].ui.images.stamBar then
+                    br.funcs.geometry.freeLine(br.player[id].ui.images.stamBar)
+                    br.player[id].ui.images.stamBar = false
+                end
+
+                if br.player[id].ui.lastInfo.hp > 0 then
+                    parse('hudtxt2 ' .. id ..' 6 "" 0 0 1')
+                    parse('hudtxt2 ' .. id ..' 7 "" 0 0 1')
+                    parse('hudtxt2 ' .. id ..' 8 "" 0 0 1')
+                    parse('hudtxt2 ' .. id ..' 9 "" 0 0 1')
+                    parse('hudtxt2 ' .. id ..' 10 "" 0 0 1')
+                end
+            end
+
+            br.player[id].ui.lastInfo = {
+                hp = player(id, 'health'),
+                armor = player(id, 'armor'),
+                exp = br.player[id].storedData.exp,
+                stamina = br.player[id].stamina
+            }
         end,
 
         getExpData = function(id)
@@ -515,11 +703,17 @@ return
             return {
                 killed           = true,
                 inGame           = false,
+                spawnPosition    = false,
+                
                 auraImage        = false,
+                stamina          = 0,
+                sprinting        = false,
+
                 storedData       = {},
                 loadedStoredData = false,
                 role             = 'player',
-                xpBar            = false
+
+                ui               = {images = {}},
             }
         end,
 
@@ -560,6 +754,21 @@ return
                 file:close() 
             end
         end,
+
+        proxyTable = function(moduleName)
+            return setmetatable({}, {
+                __index = function(tbl, key)
+                    if key >= 1 and key <= 32 then
+                        br.player[key].moduleData[moduleName] = br.player[key].moduleData[moduleName] or {}
+                        return br.player[key].moduleData[moduleName]
+                    end
+                end,
+
+                __newindex = function(tbl, key, value)
+                    rawset(br.player[key].moduleData[moduleName], key, value)
+                end
+            })
+        end
     },
 
     table = {

@@ -31,26 +31,29 @@ return
         br.player[id] = br.funcs.player.getDataSchema()
         br.funcs.game.updateGlobalHudTexts()
         br.funcs.game.checkIfEnded()
-
-        -- team
-        br.team.onLeave(id)
     end,
 
     team = function(id, team)
         if player(id, 'team') == 0 and team > 0 then
-            br.player[id].inGame = true
-            br.player[id].killed = true
-            br.funcs.player.updateHud(id)
+            if br.gracePeriodTimer <= 0 then
+                br.player[id].inGame = true
+                br.player[id].killed = true
+                br.funcs.player.updateHud(id)
 
-            local activePlayers = 0
-            for _, pl in pairs(player(0, 'table')) do
-                if br.player[pl].inGame then
-                    activePlayers = activePlayers + 1
+                local activePlayers = 0
+                for _, pl in pairs(player(0, 'table')) do
+                    if br.player[pl].inGame then
+                        activePlayers = activePlayers + 1
+                    end
                 end
-            end
 
-            if activePlayers <= 2 then
-                parse('restart')
+                if activePlayers <= 2 then
+                    parse('restart')
+                end
+            else
+                br.player[id].inGame = true
+                br.player[id].killed = false
+                br.funcs.timer.init(10, br.funcs.player.randomSpawn, id)
             end
         elseif player(id, 'team') > 0 and team == 0 then
             br.player[id].inGame = false
@@ -112,43 +115,36 @@ return
         )
         br.shrinkStarted = false
 
-        br.expBar = image(br.config.expBarImage, 415, 430, 2)
+        br.expBar = image(
+            br.config.ui.expBarImage,
+            br.config.ui.expBar.position[1],
+            br.config.ui.expBar.position[2],
+            2
+        )
 
         for _, pl in pairs(player(0, 'table')) do
             if br.player[pl].inGame then
                 br.player[pl].killed = false
+                br.player[pl].spawnPosition = false
+                br.player[pl].stamina = 100
                 br.player[pl].auraImage = false
-                br.player[pl].xpBar = false
+                br.player[pl].ui.lastInfo = false
+            
+                for key, _ in pairs(br.player[pl].ui.images) do
+                    br.player[pl].ui.images[key] = false
+                end
 
-                local spawnx, spawny
-                repeat
-                    spawnx = math.random(0, map 'xsize')
-                    spawny = math.random(0, map 'ysize')
-                until br.funcs.game.checkIfSpawnable(spawnx, spawny)
-
-                br.team.setPos(pl, spawnx, spawny)
-                br.team.updateAura(pl)
-
-                parse('spawnplayer ' .. pl .. ' ' .. spawnx * 32 + 16 .. ' ' .. spawny * 32 + 16)
+                br.funcs.player.randomSpawn(pl)
                 br.funcs.player.updateHud(pl)
-                -- br.funcs.player.updateAura(pl)
+                br.funcs.player.updateAura(pl)
             end
 
             br.funcs.player.saveStoredData(pl)
         end
 
-        -- repos @ teams
-        for _, pl in pairs(player(0, 'table')) do
-            local x, y = br.team.getPos(pl)
-
-            if x and y then
-                parse('setpos ' .. pl .. ' ' .. x * 32 + 16 .. ' ' .. y * 32 + 16)
-            end
-        end
-
         for _, train in pairs(br.trains) do
             train.image = image(train.config.image, 0, 0, 3)
-            imagealpha(train.image, 1)
+            imagealpha(train.image, 0)
 
             train.running = false
             train.startedAt = 0
@@ -161,16 +157,20 @@ return
     end,
 
     die = function(victim, killer)
-        br.player[victim].killed = true
-        if killer > 0 and killer ~= victim then
-            br.funcs.player.addExp(killer, 150)
-            br.funcs.player.updateHud(killer)
-        end
+        if br.gracePeriodTimer > 0 then 
+            br.funcs.timer.init(10, br.funcs.player.randomSpawn, victim)
+        else
+            br.player[victim].killed = true
+            if killer > 0 and killer ~= victim then
+                br.funcs.player.addExp(killer, 150)
+                br.funcs.player.updateHud(killer)
+            end
 
-        parse('sv_sound "' .. br.config.killSoundFile .. '"')
-        br.funcs.player.updateHud(victim)
-        br.funcs.game.checkIfEnded()
-        br.funcs.game.updateGlobalHudTexts()
+            parse('sv_sound "' .. br.config.killSoundFile .. '"')
+            br.funcs.player.updateHud(victim)
+            br.funcs.game.checkIfEnded()
+            br.funcs.game.updateGlobalHudTexts()
+        end
     end,
 
     second = function()
@@ -210,6 +210,17 @@ return
                         parse('sethealth ' .. pl ..' ' .. health - br.config.dangerAreaDamage)
                     else
                         parse('customkill 0 "danger zone" ' .. pl)
+                    end
+                end
+
+                if player(pl, 'armor') == 204 or not br.player[pl].sprinting then
+                    br.funcs.timer.init(10, br.funcs.player.updateHud, pl)
+                end
+
+                if not br.player[pl].sprinting then
+                    br.player[pl].stamina = br.player[pl].stamina + 2
+                    if br.player[pl].stamina >= 100 then
+                        br.player[pl].stamina = 100
                     end
                 end
             end
@@ -285,6 +296,10 @@ return
                 msg2(id, text)
             end
         end
+
+        if br.player[id].sprinting then
+            parse('effect "colorsmoke" ' .. player(id, 'x') .. ' ' .. player(id, 'y') .. '  1 1 128 128 128')
+        end
     end,
 
     hit = function(victim, source)
@@ -294,6 +309,8 @@ return
             end 
 
             return 1
+        else
+            br.funcs.timer.init(10, br.funcs.player.updateHud, victim)
         end
     end,
 
@@ -305,47 +322,42 @@ return
         if br.player[id].killed then
             parse('killplayer ' .. id)
         end
+        br.funcs.player.updateHud(id)
 
         return 'x'
     end,
 
     serveraction = function(id, action)
         if action == 1 then
-            br.team.openMenu(id)
+            local menuString, aura = 'Select aura', br.player[id].storedData.aura
+            for k, v in pairs(br.config.auras) do
+                if aura ~= k then
+                    menuString = menuString .. ',' .. v[1]
+                else
+                    menuString = menuString .. ',(' .. v[1] .. ')'
+                end
+            end
+
+            if aura ~= 0 then
+                menuString = menuString .. ',No aura' 
+            else
+                menuString = menuString .. ',(No aura)'
+            end
+
+            menu(id, menuString)
         end
-
-        -- if action == 1 then
-        --     local menuString, aura = 'Select aura', br.player[id].storedData.aura
-        --     for k, v in pairs(br.config.auras) do
-        --         if aura ~= k then
-        --             menuString = menuString .. ',' .. v[1]
-        --         else
-        --             menuString = menuString .. ',(' .. v[1] .. ')'
-        --         end
-        --     end
-
-        --     if aura ~= 0 then
-        --         menuString = menuString .. ',No aura' 
-        --     else
-        --         menuString = menuString .. ',(No aura)'
-        --     end
-
-        --     menu(id, menuString)
-        -- end
     end,
 
     menu = function(id, menu, button)
-        br.menu.users[id].cached_menu:onMenu(menu, button)
-
-        -- if menu == 'Select aura' then
-        --     if button >= 1 and button <= 8 then
-        --         br.player[id].storedData.aura = button
-        --         br.funcs.player.updateAura(id)
-        --     elseif button == 9 then
-        --         br.player[id].storedData.aura = 0
-        --         br.funcs.player.updateAura(id)
-        --     end
-        -- end
+        if menu == 'Select aura' then
+            if button >= 1 and button <= 8 then
+                br.player[id].storedData.aura = button
+                br.funcs.player.updateAura(id)
+            elseif button == 9 then
+                br.player[id].storedData.aura = 0
+                br.funcs.player.updateAura(id)
+            end
+        end
     end,
 
     say = function(id, message)
@@ -408,4 +420,44 @@ return
             return 1
         end
     end,
+
+    walkover = function(id, iid, type, ain, a, mode)
+        if (type >= 64 and type <= 65) or (type >= 57 and type <= 58) or (type >= 79 and type <= 84) then
+            br.funcs.timer.init(10, br.funcs.player.updateHud, id)
+        end
+    end,
+
+    key = function(id, key, state)
+        if key == 'space' then
+            if state == 1 then
+                if br.player[id].stamina > 0 then
+                    br.player[id].sprinting = true
+                    parse('speedmod ' .. id .. ' 13')
+                end
+            else
+                br.player[id].sprinting = false
+                parse('speedmod ' .. id .. ' 0')
+            end
+        end
+
+        if key == 'H' and state == 1 then
+            msg2(id, string.char(169) .. '255000000Cosmetics are coming soon!')
+        end
+    end,
+
+    move = function(id, x, y, walk)
+        if br.player[id].sprinting and walk == 0 then
+            br.player[id].stamina = br.player[id].stamina - 0.33
+            if br.player[id].stamina < 0 then
+                br.player[id].stamina = 0
+                br.player[id].sprinting = false
+                parse('speedmod ' .. id .. ' 0')
+            else
+                parse('speedmod ' .. id .. ' 13')
+            end
+            br.funcs.player.updateHud(id)
+        elseif br.player[id].sprinting and walk == 1 then
+            parse('speedmod ' .. id .. ' 0')
+        end
+    end
 }

@@ -11,24 +11,21 @@ br = {
     gpTimerFont      = false,
 
     expBar           = false,
-    trains           = {},
-
-    -- lib
-    timer    = assert(loadfile('sys/lua/battle_royale/lib/MikuAuahDark/timerEx.lua'))(),
-    class    = assert(loadfile('sys/lua/battle_royale/lib/Gajos/class.lua'))(),
-    menu     = assert(loadfile('sys/lua/battle_royale/lib/Gajos/menu.lua'))(),
-
-    config   = assert(loadfile('sys/lua/battle_royale/config.lua'))(),
-    commands = assert(loadfile('sys/lua/battle_royale/commands.lua'))(),
-    funcs    = assert(loadfile('sys/lua/battle_royale/funcs.lua'))(),
-    hooks    = assert(loadfile('sys/lua/battle_royale/hooks.lua'))(),
-    settings = assert(loadfile('sys/lua/battle_royale/settings.lua'))(),
-    team     = assert(loadfile('sys/lua/battle_royale/team.lua'))(),
+    trains           = {}
 }
+
+br.config   = assert(loadfile('sys/lua/battle_royale/config.lua'))()
+br.commands = assert(loadfile('sys/lua/battle_royale/commands.lua'))()
+br.funcs    = assert(loadfile('sys/lua/battle_royale/funcs.lua'))()
+br.hooks    = assert(loadfile('sys/lua/battle_royale/hooks.lua'))()
+br.settings = assert(loadfile('sys/lua/battle_royale/settings.lua'))()
 
 for hook, _ in pairs(br.hooks) do
     addhook(hook, 'br.hooks.' .. hook)
 end
+
+addbind('space')
+addbind('H')
 
 for setting, values in pairs(br.settings) do
     local vals = (type(values) ~= 'table' and {values} or values)
@@ -37,13 +34,6 @@ end
 
 for i = 1, 32 do
     br.player[i] = br.funcs.player.getDataSchema()
-end
-
-for _, v in pairs(br.config.auras) do
-    local name = v[1]
-    local r, g, b = v[2], v[3], v[4]
-
-    br.teams[name] = br.team.new(name, r, g, b)
 end
 
 for pattern, conf in pairs(br.config.maps) do
