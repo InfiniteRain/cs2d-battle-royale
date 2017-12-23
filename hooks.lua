@@ -53,6 +53,7 @@ return
             else
                 br.player[id].inGame = true
                 br.player[id].killed = false
+                br.player[id].ui.lastInfo = false
                 br.funcs.timer.init(10, br.funcs.player.randomSpawn, id)
             end
         elseif player(id, 'team') > 0 and team == 0 then
@@ -158,6 +159,7 @@ return
 
     die = function(victim, killer)
         if br.gracePeriodTimer > 0 then 
+            br.player[id].ui.lastInfo = false
             br.funcs.timer.init(10, br.funcs.player.randomSpawn, victim)
         else
             br.player[victim].killed = true
