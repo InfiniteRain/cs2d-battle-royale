@@ -138,6 +138,9 @@ return
             for key, _ in pairs(br.player[pl].ui.images) do
                 br.player[pl].ui.images[key] = false
             end
+            for key, _ in pairs(br.player[pl].ui.skins.images) do
+                br.player[pl].ui.skins.images[key] = false
+            end
 
             br.funcs.player.updateHud(pl)
             br.funcs.player.saveStoredData(pl)
@@ -213,10 +216,6 @@ return
                     end
                 end
 
-                if player(pl, 'armor') == 204 or not br.player[pl].sprinting then
-                    br.funcs.timer.init(10, br.funcs.player.updateHud, pl)
-                end
-
                 if not br.player[pl].sprinting then
                     br.player[pl].stamina = br.player[pl].stamina + 2
                     if br.player[pl].stamina >= 100 then
@@ -236,6 +235,10 @@ return
             end
         end
 
+        for _, pl in pairs(player(0, 'table')) do
+            br.funcs.player.updateHud(pl)
+        end
+
         if br.gracePeriodTimer > 0 then return end
 
         if not br.shrinkStarted and br.safeZone then
@@ -245,10 +248,20 @@ return
     end,
 
     ms100 = function()
-        for _, v in pairs(player(0, 'tableliving')) do
-            for _, train in pairs(br.trains) do
-                if br.funcs.train.positionInTrain(train, player(v, 'x'), player(v, 'y')) then
-                    parse('customkill 0 "train" ' .. v)
+        for _, v in pairs(player(0, 'table')) do
+            if player(v, 'health') > 0 then
+                for _, train in pairs(br.trains) do
+                    if br.funcs.train.positionInTrain(train, player(v, 'x'), player(v, 'y')) then
+                        parse('customkill 0 "train" ' .. v)
+                    end
+                end
+
+                if br.player[v].ui.skins.opened then
+                    br.hooks.clientdata(v, 0, player(1, 'mousex'), player(1, 'mousey'))
+                end
+            else
+                if br.player[v].ui.skins.opened then
+                    reqcld(v, 0)
                 end
             end
         end
@@ -346,6 +359,15 @@ return
 
             menu(id, menuString)
         elseif action == 2 then
+            if player(id, 'health') > 0 then
+                if br.player[id].ui.skins.opened then
+                    parse('setweapon ' .. id .. ' '.. br.player[id].ui.skins.lastWep)
+                else
+                    br.player[id].ui.skins.lastWep = player(id, 'weapontype')
+                    parse('setweapon ' .. id .. ' 50')
+                end
+            end
+
             br.player[id].ui.skins.opened = not br.player[id].ui.skins.opened
         end
 
@@ -442,8 +464,20 @@ return
                 br.player[id].sprinting = false
                 parse('speedmod ' .. id .. ' 0')
             end
-        elseif key == 'escape' then
+        elseif key == 'escape' and state == 0 then
             if br.player[id].ui.skins.opened then
+                br.player[id].ui.skins.opened = false
+                br.funcs.player.updateHud(id)
+            end
+        elseif key == 'mouse1' then
+            if not br.player[id].ui.skins.opened then return end
+            local hover = br.player[id].ui.skins.hover
+            if hover == 'none' then return end
+
+            if hover:sub(1, 3) == 'cat' then
+                br.player[id].ui.skins.cat = tonumber(hover:sub(4))
+                br.funcs.player.updateHud(id)
+            elseif hover == 'exit' then
                 br.player[id].ui.skins.opened = false
                 br.funcs.player.updateHud(id)
             end
@@ -464,5 +498,45 @@ return
         elseif br.player[id].sprinting and walk == 1 then
             parse('speedmod ' .. id .. ' 0')
         end
+    end,
+
+    clientdata = function(id, mode, data1, data2)
+        local x, y, skinsConf = data1, data2, br.config.ui.skins
+
+        br.player[id].ui.skins.hover = 'none'
+        if x >= skinsConf.exit.box[1] and y >= skinsConf.exit.box[2]
+            and x <= skinsConf.exit.box[3] and y <= skinsConf.exit.box[4] then
+            br.player[id].ui.skins.hover = 'exit'
+        end
+
+        for k, v in pairs(skinsConf.categories) do
+            if x >= v.box[1] and y >= v.box[2] and x <= v.box[3] and y <= v.box[4] then
+                br.player[id].ui.skins.hover = 'cat' .. k
+            end
+        end
+
+        for ty = 1, skinsConf.slots.dimensions[2] do
+            for tx = 1, skinsConf.slots.dimensions[1] do
+                local fx1, fy1 = skinsConf.slots.firstBox[1], skinsConf.slots.firstBox[2]
+                local fx2, fy2 = skinsConf.slots.firstBox[3], skinsConf.slots.firstBox[4]
+                local ox, oy   = skinsConf.slots.offset[1], skinsConf.slots.offset[2]
+
+                local x1, y1 = fx1 + (fx2 - fx1 + ox) * (tx - 1), fy1 + (fy2 - fy1 + oy) * (ty - 1)
+                local x2, y2 = x1 + (fx2 - fx1), y1 + (fy2 - fy1)
+                if x >= x1 and y >= y1 and x <= x2 and y <= y2 then
+                    br.player[id].ui.skins.hover = 'slot_' .. string.format('%03d_%03d', tx, ty)
+                end
+            end
+        end
+
+        if x >= skinsConf.directionals.prev[1] and y >= skinsConf.directionals.prev[2]
+            and x <= skinsConf.directionals.prev[3] and y <= skinsConf.directionals.prev[4] then
+            br.player[id].ui.skins.hover = 'prev'
+        elseif x >= skinsConf.directionals.next[1] and y >= skinsConf.directionals.next[2]
+            and x <= skinsConf.directionals.next[3] and y <= skinsConf.directionals.next[4] then
+            br.player[id].ui.skins.hover = 'next'
+        end
+
+        br.funcs.player.updateHud(id)
     end
 }

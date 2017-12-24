@@ -1,8 +1,8 @@
-return 
+return
 
 {
     gracePeriodSeconds = 12,
-    
+
     finalAreaRadius    = 10,
     areaShrinkingSpeed = 70,
     dangerAreaDamage   = 10,
@@ -12,6 +12,10 @@ return
     killSoundFile       = 'br/ds.ogg',
     auraImage           = 'gfx/sprites/flare4.bmp',
     skinsMenuImage      = 'gfx/br/sm.png',
+    hoverCatImage       = 'gfx/br/ssc.png',
+    hoverExitImage      = 'gfx/br/sse.png',
+    hoverSlotImage      = 'gfx/br/sss.png',
+    hoverDirImage       = 'gfx/br/ssd.png',
 
     ui = {
         expBarImage         = 'gfx/br/xb.png',
@@ -19,19 +23,66 @@ return
         bigProgressBarImage = 'gfx/br/eb.png',
 
         hpBar = {
-            position   = {90, 450}
+            position = {90, 450}
         },
 
         armorBar = {
-            position   = {246, 450}
+            position = {246, 450}
         },
 
         expBar = {
-            position   = {415, 430}
+            position = {415, 430}
         },
 
         stamBar = {
-            position   = {415, 450}
+            position = {415, 450}
+        },
+
+        skins = {
+            position = {425, 240},
+            scale = {0.6, 0.6},
+
+            exit = {
+                name = 'Exit',
+                box  = {198, 367, 306, 406}
+            },
+
+            categories = {
+                {
+                    name = 'Common skins',
+                    box  = {192, 82 , 312, 107}
+                },
+                {
+                    name = 'Buyable skins',
+                    box  = {192, 120, 312, 145}
+                },
+                {
+                    name = 'Event skins',
+                    box  = {192, 159, 312, 183}
+                },
+                {
+                    name = 'Special skins',
+                    box  = {192, 196, 312, 220}
+                }
+            },
+
+            slots = {
+                firstBox   = {339, 64 , 387, 113},
+
+                offset     = {7, 6},
+                dimensions = {6, 5}
+            },
+
+            directionals = {
+                prev = {435, 350, 460, 370},
+                next = {541, 350, 566, 370}
+            },
+
+            misc = {
+                page  = {499, 360},
+                level = {418, 396},
+                gold  = {585, 396}
+            }
         }
     },
 
@@ -138,7 +189,7 @@ return
         'gfx/br/eb.png',
         'gfx/br/t2.png',
         'gfx/br/sm.png',
-        
+
         'sfx/br/ds.ogg'
     },
 
@@ -158,7 +209,7 @@ return
             tag     = 'VIP',
             color   = {95, 255, 95},
             allowAtC = true,
-            
+
             players = {}
         },
 

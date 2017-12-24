@@ -339,6 +339,27 @@ return
                 zone.timer = false
             end)
         end,
+
+        drawSquare = function(x1, y1, x2, y2, width, mode, alpha, color, id)
+            local l1 = br.funcs.geometry.drawLine(x1, y1, x2, y1, width, mode, alpha, color, id)
+            local l2 = br.funcs.geometry.drawLine(x2, y1, x2, y2, width, mode, alpha, color, id)
+            local l3 = br.funcs.geometry.drawLine(x2, y2, x1, y2, width, mode, alpha, color, id)
+            local l4 = br.funcs.geometry.drawLine(x1, y2, x1, y1, width, mode, alpha, color, id)
+
+            return {
+                l1 = l1,
+                l2 = l2,
+                l3 = l3,
+                l4 = l4
+            }
+        end,
+
+        freeSquare = function(sq)
+            br.funcs.geometry.freeLine(sq.l1)
+            br.funcs.geometry.freeLine(sq.l2)
+            br.funcs.geometry.freeLine(sq.l3)
+            br.funcs.geometry.freeLine(sq.l4)
+        end
     },
 
     game = {
@@ -439,10 +460,14 @@ return
                 armor   = -1,
                 exp     = -1,
                 stamina = -1,
-                skins   = -1
+                skins   = -1,
+                hover   = '',
+                cat     = -1,
+                page    = -1,
             }
 
             local c, a = string.char(169), (br.player[id].ui.skins.opened and 0.2 or 1)
+            local uiImages, uiTexts, uiConf = br.player[id].ui.images, br.player[id].ui.texts, br.config.ui
 
             -- Alive players
             local alivePlayers = 0
@@ -462,11 +487,11 @@ return
                     string.char(169) .. '000255000Alive: ' .. alivePlayers .. ' | ' ..
                     string.char(169) .. '255000000Dead: '  .. deadPlayers  .. ' | ' ..
                     string.char(169) .. '255255255Spec: '  .. specPlayers
-            if not br.player[id].ui.texts.alive then
-                br.player[id].ui.texts.alive = br.funcs.hudtext.new(id, 2, '', 415, 50, 1)
+            if not uiTexts.alive then
+                uiTexts.alive = br.funcs.hudtext.new(id, 2, '', 415, 50, 1)
             end
-            br.player[id].ui.texts.alive:setText(aliveText)
-            br.player[id].ui.texts.alive:setAlpha(a)
+            uiTexts.alive:setText(aliveText)
+            uiTexts.alive:setAlpha(a)
 
             -- Grace period text
             local graceText
@@ -476,40 +501,40 @@ return
                 graceText = c .. '255255000Seconds left until the end of the grace period: ' .. br.gracePeriodTimer
             end
 
-            if not br.player[id].ui.texts.grace then
-                br.player[id].ui.texts.grace = br.funcs.hudtext.new(id, 1, '', 415, 65, 1)
+            if not uiTexts.grace then
+                uiTexts.grace = br.funcs.hudtext.new(id, 1, '', 415, 65, 1)
             end
-            br.player[id].ui.texts.grace:setText(graceText)
-            br.player[id].ui.texts.grace:setAlpha(a)
+            uiTexts.grace:setText(graceText)
+            uiTexts.grace:setAlpha(a)
 
             -- Levels UI text
             local levelData = br.funcs.player.getExpData(id)
             local expText = c .. '255165000' .. levelData.progressNextLevel .. '/' .. levelData.neededForNextLevel
             local levelText = c .. '030144255' .. levelData.currentLevel
-            if not br.player[id].ui.texts.exp then
-                br.player[id].ui.texts.exp = br.funcs.hudtext.new(
-                    id, 3, '', br.config.ui.expBar.position[1] + 13, br.config.ui.expBar.position[2] - 1, 1, 1
+            if not uiTexts.exp then
+                uiTexts.exp = br.funcs.hudtext.new(
+                    id, 3, '', uiConf.expBar.position[1] + 13, uiConf.expBar.position[2] - 1, 1, 1
                 )
             end
-            br.player[id].ui.texts.exp:setText(expText)
-            br.player[id].ui.texts.exp:setAlpha(a)
+            uiTexts.exp:setText(expText)
+            uiTexts.exp:setAlpha(a)
 
-            if not br.player[id].ui.texts.level then
-                br.player[id].ui.texts.level = br.funcs.hudtext.new(
-                    id, 5, '', br.config.ui.expBar.position[1] - 68, br.config.ui.expBar.position[2] - 1, 1, 1
+            if not uiTexts.level then
+                uiTexts.level = br.funcs.hudtext.new(
+                    id, 5, '', uiConf.expBar.position[1] - 68, uiConf.expBar.position[2] - 1, 1, 1
                 )
             end
-            br.player[id].ui.texts.level:setText(levelText)
-            br.player[id].ui.texts.level:setAlpha(a)
+            uiTexts.level:setText(levelText)
+            uiTexts.level:setAlpha(a)
 
             -- Steam warning
             if player(id, 'steamid') == '0' then
                 local warnText = c .. '255000000You\'re not logged into Steam! Your level progress will NOT be saved!'
-                if not br.player[id].ui.texts.warn then
-                    br.player[id].ui.texts.warn = br.funcs.hudtext.new(id, 4, '', 415, 400, 1, 1)
+                if not uiTexts.warn then
+                    uiTexts.warn = br.funcs.hudtext.new(id, 4, '', 415, 400, 1, 1)
                 end
-                br.player[id].ui.texts.warn:setText(warnText)
-                br.player[id].ui.texts.warn:setAlpha(a)
+                uiTexts.warn:setText(warnText)
+                uiTexts.warn:setAlpha(a)
             end
 
             -- Death info
@@ -518,90 +543,90 @@ return
                 killedText = c .. '255000000You\'re DEAD. If you try to respawn, you will get instantly killed!'
             end
 
-            if not br.player[id].ui.texts.death then
-                br.player[id].ui.texts.death = br.funcs.hudtext.new(id, 0, '', 415, 35, 1, 0)
+            if not uiTexts.death then
+                uiTexts.death = br.funcs.hudtext.new(id, 0, '', 415, 35, 1, 0)
             end
-            br.player[id].ui.texts.death:setText(killedText)
-            br.player[id].ui.texts.death:setAlpha(a)
+            uiTexts.death:setText(killedText)
+            uiTexts.death:setAlpha(a)
 
             -- Xp bar
-            if not br.player[id].ui.images.xpBar then
-                br.player[id].ui.images.xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
+            if not uiImages.xpBar then
+                uiImages.xpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {30, 144, 255}, id)
             end
 
             if br.player[id].ui.lastInfo.exp ~= br.player[id].storedData.exp then
                 local barWidth = 128 * (levelData.progressNextLevel / levelData.neededForNextLevel)
                 br.funcs.geometry.moveLine(
-                    br.player[id].ui.images.xpBar,
-                    br.config.ui.expBar.position[1] - 51,
-                    br.config.ui.expBar.position[2],
-                    br.config.ui.expBar.position[1] - 51 + barWidth,
-                    br.config.ui.expBar.position[2]
+                    uiImages.xpBar,
+                    uiConf.expBar.position[1] - 51,
+                    uiConf.expBar.position[2],
+                    uiConf.expBar.position[1] - 51 + barWidth,
+                    uiConf.expBar.position[2]
                 )
             end
 
             if not br.player[id].killed then
                 -- Hp bar
-                if not br.player[id].ui.images.hpBarFrame then
-                    br.player[id].ui.images.hpBarFrame = image(
-                        br.config.ui.progressBarImage,
-                        br.config.ui.hpBar.position[1],
-                        br.config.ui.hpBar.position[2],
+                if not uiImages.hpBarFrame then
+                    uiImages.hpBarFrame = image(
+                        uiConf.progressBarImage,
+                        uiConf.hpBar.position[1],
+                        uiConf.hpBar.position[2],
                         2,
                         id
                     )
                 end
 
-                if not br.player[id].ui.images.hpBar then
-                    br.player[id].ui.images.hpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {255, 0, 0}, id)
+                if not uiImages.hpBar then
+                    uiImages.hpBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {255, 0, 0}, id)
                 end
 
                 if br.player[id].ui.lastInfo.hp ~= player(id, 'health') then
                     local hpBarWidth = 128 * (player(id, 'health') / player(id, 'maxhealth'))
                     br.funcs.geometry.moveLine(
-                        br.player[id].ui.images.hpBar,
-                        br.config.ui.hpBar.position[1] - 64,
-                        br.config.ui.hpBar.position[2],
-                        br.config.ui.hpBar.position[1] - 64 + hpBarWidth,
-                        br.config.ui.hpBar.position[2]
+                        uiImages.hpBar,
+                        uiConf.hpBar.position[1] - 64,
+                        uiConf.hpBar.position[2],
+                        uiConf.hpBar.position[1] - 64 + hpBarWidth,
+                        uiConf.hpBar.position[2]
                     )
                 end
 
                 local hpText = c .. '255255255' .. player(id, 'health') .. '/' .. player(id, 'maxhealth')
-                if not br.player[id].ui.texts.hp then
-                    br.player[id].ui.texts.hp = br.funcs.hudtext.new(
-                        id, 6, '', br.config.ui.hpBar.position[1], br.config.ui.hpBar.position[2] - 1, 1, 1
+                if not uiTexts.hp then
+                    uiTexts.hp = br.funcs.hudtext.new(
+                        id, 6, '', uiConf.hpBar.position[1], uiConf.hpBar.position[2] - 1, 1, 1
                     )
                 end
-                br.player[id].ui.texts.hp:setText(hpText)
-                br.player[id].ui.texts.hp:setAlpha(a)
+                uiTexts.hp:setText(hpText)
+                uiTexts.hp:setAlpha(a)
 
                 -- Armor bar
-                if not br.player[id].ui.images.armorBarFrame then
-                    br.player[id].ui.images.armorBarFrame = image(
-                        br.config.ui.progressBarImage,
-                        br.config.ui.armorBar.position[1],
-                        br.config.ui.armorBar.position[2],
+                if not uiImages.armorBarFrame then
+                    uiImages.armorBarFrame = image(
+                        uiConf.progressBarImage,
+                        uiConf.armorBar.position[1],
+                        uiConf.armorBar.position[2],
                         2,
                         id
                     )
                 end
 
-                if not br.player[id].ui.images.armorBar then
-                    br.player[id].ui.images.armorBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {0, 0, 0}, id)
+                if not uiImages.armorBar then
+                    uiImages.armorBar = br.funcs.geometry.drawLine(0, 0, 0, 0, 12, 2, 0.5, {0, 0, 0}, id)
                 end
 
                 if br.player[id].ui.lastInfo.armor ~= player(id, 'armor') then
                     local armorBarWidth = 128 * (player(id, 'armor') <= 100 and player(id, 'armor') / 100 or 1)
                     br.funcs.geometry.moveLine(
-                        br.player[id].ui.images.armorBar,
-                        br.config.ui.armorBar.position[1] - 64,
-                        br.config.ui.armorBar.position[2],
-                        br.config.ui.armorBar.position[1] - 64 + armorBarWidth,
-                        br.config.ui.armorBar.position[2]
+                        uiImages.armorBar,
+                        uiConf.armorBar.position[1] - 64,
+                        uiConf.armorBar.position[2],
+                        uiConf.armorBar.position[1] - 64 + armorBarWidth,
+                        uiConf.armorBar.position[2]
                     )
                     br.funcs.geometry.colorLine(
-                        br.player[id].ui.images.armorBar, player(id, 'armor') <= 200 and {0, 0, 255} or {98, 98, 98}
+                        uiImages.armorBar, player(id, 'armor') <= 200 and {0, 0, 255} or {98, 98, 98}
                     )
                 end
 
@@ -626,27 +651,27 @@ return
                         armorText = armorText .. '???'
                     end
                 end
-                if not br.player[id].ui.texts.armor then
-                    br.player[id].ui.texts.armor = br.funcs.hudtext.new(
-                        id, 7, '', br.config.ui.armorBar.position[1], br.config.ui.armorBar.position[2] - 1, 1, 1
+                if not uiTexts.armor then
+                    uiTexts.armor = br.funcs.hudtext.new(
+                        id, 7, '', uiConf.armorBar.position[1], uiConf.armorBar.position[2] - 1, 1, 1
                     )
                 end
-                br.player[id].ui.texts.armor:setText(armorText)
-                br.player[id].ui.texts.armor:setAlpha(a)
+                uiTexts.armor:setText(armorText)
+                uiTexts.armor:setAlpha(a)
 
                 -- Stamina bar
-                if not br.player[id].ui.images.stamBarFrame then
-                    br.player[id].ui.images.stamBarFrame = image(
-                        br.config.ui.bigProgressBarImage,
-                        br.config.ui.stamBar.position[1],
-                        br.config.ui.stamBar.position[2],
+                if not uiImages.stamBarFrame then
+                    uiImages.stamBarFrame = image(
+                        uiConf.bigProgressBarImage,
+                        uiConf.stamBar.position[1],
+                        uiConf.stamBar.position[2],
                         2,
                         id
                     )
                 end
 
-                if not br.player[id].ui.images.stamBar then
-                    br.player[id].ui.images.stamBar = br.funcs.geometry.drawLine(
+                if not uiImages.stamBar then
+                    uiImages.stamBar = br.funcs.geometry.drawLine(
                         0, 0, 0, 0, 12, 2, 0.5, {128, 255, 128}, id
                     )
                 end
@@ -654,106 +679,208 @@ return
                 if br.player[id].ui.lastInfo.stamina ~= br.player[id].stamina then
                     local stamBarWidth = 154 * (br.player[id].stamina) / 100
                     br.funcs.geometry.moveLine(
-                        br.player[id].ui.images.stamBar,
-                        br.config.ui.stamBar.position[1] - 77,
-                        br.config.ui.stamBar.position[2],
-                        br.config.ui.stamBar.position[1] - 77 + stamBarWidth,
-                        br.config.ui.stamBar.position[2])
+                        uiImages.stamBar,
+                        uiConf.stamBar.position[1] - 77,
+                        uiConf.stamBar.position[2],
+                        uiConf.stamBar.position[1] - 77 + stamBarWidth,
+                        uiConf.stamBar.position[2])
                 end
 
                 local stamText = c .. '064064064' .. math.floor(br.player[id].stamina) .. '/100'
-                if not br.player[id].ui.texts.stam then
-                    br.player[id].ui.texts.stam = br.funcs.hudtext.new(
-                        id, 8, '', br.config.ui.stamBar.position[1], br.config.ui.stamBar.position[2] - 1, 1, 1
+                if not uiTexts.stam then
+                    uiTexts.stam = br.funcs.hudtext.new(
+                        id, 8, '', uiConf.stamBar.position[1], uiConf.stamBar.position[2] - 1, 1, 1
                     )
                 end
-                br.player[id].ui.texts.stam:setText(stamText)
-                br.player[id].ui.texts.stam:setAlpha(a)
+                uiTexts.stam:setText(stamText)
+                uiTexts.stam:setAlpha(a)
             else
                 -- Hp bar
-                if br.player[id].ui.images.hpBarFrame then
-                    freeimage(br.player[id].ui.images.hpBarFrame)
-                    br.player[id].ui.images.hpBarFrame = false
+                if uiImages.hpBarFrame then
+                    freeimage(uiImages.hpBarFrame)
+                    uiImages.hpBarFrame = false
                 end
 
-                if br.player[id].ui.images.hpBar then
-                    br.funcs.geometry.freeLine(br.player[id].ui.images.hpBar)
-                    br.player[id].ui.images.hpBar = false
+                if uiImages.hpBar then
+                    br.funcs.geometry.freeLine(uiImages.hpBar)
+                    uiImages.hpBar = false
                 end
 
                 -- Armor bar
-                if br.player[id].ui.images.armorBarFrame then
-                    freeimage(br.player[id].ui.images.armorBarFrame)
-                    br.player[id].ui.images.armorBarFrame = false
+                if uiImages.armorBarFrame then
+                    freeimage(uiImages.armorBarFrame)
+                    uiImages.armorBarFrame = false
                 end
 
-                if br.player[id].ui.images.armorBar then
-                    br.funcs.geometry.freeLine(br.player[id].ui.images.armorBar)
-                    br.player[id].ui.images.armorBar = false
+                if uiImages.armorBar then
+                    br.funcs.geometry.freeLine(uiImages.armorBar)
+                    uiImages.armorBar = false
                 end
 
                 -- Stamina bar
-                if br.player[id].ui.images.stamBarFrame then
-                    freeimage(br.player[id].ui.images.stamBarFrame)
-                    br.player[id].ui.images.stamBarFrame = false
+                if uiImages.stamBarFrame then
+                    freeimage(uiImages.stamBarFrame)
+                    uiImages.stamBarFrame = false
                 end
 
-                if br.player[id].ui.images.stamBar then
-                    br.funcs.geometry.freeLine(br.player[id].ui.images.stamBar)
-                    br.player[id].ui.images.stamBar = false
+                if uiImages.stamBar then
+                    br.funcs.geometry.freeLine(uiImages.stamBar)
+                    uiImages.stamBar = false
                 end
 
                 if br.player[id].ui.lastInfo.hp > 0 or br.player[id].ui.lastInfo.hp == -1 then
-                    if br.player[id].ui.texts.hp then
-                        br.player[id].ui.texts.hp:setText('')
+                    if uiTexts.hp then
+                        uiTexts.hp:setText('')
                     end
 
-                    if br.player[id].ui.texts.armor then
-                        br.player[id].ui.texts.armor:setText('')
+                    if uiTexts.armor then
+                        uiTexts.armor:setText('')
                     end
 
-                    if br.player[id].ui.texts.stam then
-                        br.player[id].ui.texts.stam:setText('')
+                    if uiTexts.stam then
+                        uiTexts.stam:setText('')
                     end
                 end
             end
 
             -- Controls info
             local sprintText = c .. '255128000[SPACE] to sprint'
-            if not br.player[id].ui.texts.sprintInfo then
-                br.player[id].ui.texts.sprintInfo = br.funcs.hudtext.new(id, 9, '', 90, 429, 1, 1)
+            if not uiTexts.sprintInfo then
+                uiTexts.sprintInfo = br.funcs.hudtext.new(id, 9, '', 90, 429, 1, 1)
             end
-            br.player[id].ui.texts.sprintInfo:setText(sprintText)
-            br.player[id].ui.texts.sprintInfo:setAlpha(a)
+            uiTexts.sprintInfo:setText(sprintText)
+            uiTexts.sprintInfo:setAlpha(a)
 
             local cosmText = c .. '255128000[F3] for cosmetics menu'
-            if not br.player[id].ui.texts.cosmInfo then
-                br.player[id].ui.texts.cosmInfo = br.funcs.hudtext.new(id, 10, '', 246, 429, 1, 1)
+            if not uiTexts.cosmInfo then
+                uiTexts.cosmInfo = br.funcs.hudtext.new(id, 10, '', 246, 429, 1, 1)
             end
-            br.player[id].ui.texts.cosmInfo:setText(cosmText)
-            br.player[id].ui.texts.cosmInfo:setAlpha(a)
+            uiTexts.cosmInfo:setText(cosmText)
+            uiTexts.cosmInfo:setAlpha(a)
 
             -- Skins menu
-            if br.player[id].ui.skins.opened
-                    and (not br.player[id].ui.lastInfo.skins or br.player[id].ui.lastInfo.skins == -1) then
-                if not br.player[id].ui.images.skins then
-                    br.player[id].ui.images.skins = image(
-                        br.config.skinsMenuImage,
-                        425,
-                        240,
-                        2,
-                        id
+            local blines = {2, 2, 0.5, {0, 255, 255}, id}
+            local skins, skinsConf = br.player[id].ui.skins, br.config.ui.skins
+            local skinsImages, skinsTexts = br.player[id].ui.skins.images, br.player[id].ui.skins.texts
+            if skins.opened and (not br.player[id].ui.lastInfo.skins or br.player[id].ui.lastInfo.skins == -1) then
+                -- Menu itself
+                if not skinsImages.menu then
+                    skinsImages.menu = image(
+                        br.config.skinsMenuImage, skinsConf.position[1], skinsConf.position[2], 2, id
                     )
 
-                    imagealpha(br.player[id].ui.images.skins, 0)
-                    imagescale(br.player[id].ui.images.skins, 0.6, 0.6)
+                    imagealpha(skinsImages.menu, 0)
+                    imagescale(skinsImages.menu, skinsConf.scale[1], skinsConf.scale[2])
+                end
+                imagealpha(skinsImages.menu, 0.9)
+
+                -- Exit
+                local exit = skinsConf.exit
+                local cx = math.floor(exit.box[1] + (exit.box[3] - exit.box[1]) / 2)
+                local cy = math.floor(exit.box[2] + (exit.box[4] - exit.box[2]) / 2)
+                if not skinsTexts.exit then
+                    skinsTexts.exit = br.funcs.hudtext.new(id, 20, '', cx, cy, 1, 1, 20)
+                end
+                skinsTexts.exit:setText('Exit')
+
+                -- Categories
+                for k, v in pairs(skinsConf.categories) do
+                    local key = 'cat' .. k
+                    if not skinsTexts[key] then
+                        local cx = math.floor(v.box[1] + (v.box[3] - v.box[1]) / 2)
+                        local cy = math.floor(v.box[2] + (v.box[4] - v.box[2]) / 2)
+                        skinsTexts[key] = br.funcs.hudtext.new(id, 20 + k, '', cx, cy, 1, 1, 15)
+                    end
+                    skinsTexts[key]:setText(v.name)
                 end
 
-                imagealpha(br.player[id].ui.images.skins, 1)
-            elseif not br.player[id].ui.skins.opened
-                    and (br.player[id].ui.lastInfo.skins or br.player[id].ui.lastInfo.skins == -1) then
-                if br.player[id].ui.images.skins then
-                    imagealpha(br.player[id].ui.images.skins, 0)
+                -- Page display
+                if not skinsTexts.page then
+                    skinsTexts.page = br.funcs.hudtext.new(
+                        id, 25, '', skinsConf.misc.page[1], skinsConf.misc.page[2], 1, 1, 12
+                    )
+                end
+                skinsTexts.page:setText('x/y')
+
+                -- Level display
+                if not skinsTexts.level then
+                    skinsTexts.level = br.funcs.hudtext.new(
+                        id, 26, '', skinsConf.misc.level[1], skinsConf.misc.level[2], 1, 1, 12
+                    )
+                end
+                skinsTexts.level:setText('Level: ' .. br.funcs.player.getExpData(id).currentLevel)
+
+                -- Gold display
+                if not skinsTexts.gold then
+                    skinsTexts.gold = br.funcs.hudtext.new(
+                        id, 27, '', skinsConf.misc.gold[1], skinsConf.misc.gold[2], 1, 1, 12
+                    )
+                end
+                skinsTexts.gold:setText('Gold: ' .. br.player[id].storedData.gold)
+            elseif not skins.opened and (br.player[id].ui.lastInfo.skins or br.player[id].ui.lastInfo.skins == -1) then
+                -- Hide highlights
+                for k, v in pairs({
+                    'menu',
+                    'catHigh',
+                    'catHov',
+                    'exitHov'
+                }) do
+                    if skinsImages[v] then
+                        imagealpha(skinsImages[v], 0)
+                    end
+                end
+
+                -- Remove texts
+                for _, text in pairs(skinsTexts) do
+                    text:setText('')
+                end
+            end
+
+            if skins.opened then
+                if br.player[id].ui.lastInfo.cat ~= skins.cat
+                    or skins.opened and not br.player[id].ui.lastInfo.skins then
+                    -- Selected category highlight
+                    if not skinsImages.catHigh then
+                        skinsImages.catHigh = image(br.config.hoverCatImage, 0, 0, 2, id)
+                        imagecolor(skinsImages.catHigh, 128, 255, 0)
+                        imagescale(skinsImages.catHigh, skinsConf.scale[1], skinsConf.scale[2])
+                    end
+                    local cat = skinsConf.categories[tonumber(br.player[id].ui.skins.cat)]
+                    local x, y = cat.box[1] + (cat.box[3] - cat.box[1]) / 2, cat.box[2] + (cat.box[4] - cat.box[2]) / 2
+                    imagepos(skinsImages.catHigh, x, y, 0)
+                    imagealpha(skinsImages.catHigh, 0.15)
+                end
+
+                if skins.hover:sub(1, 3) == 'cat' and br.player[id].ui.lastInfo.hover ~= skins.hover then
+                    if not skinsImages.catHov then
+                        skinsImages.catHov = image(br.config.hoverCatImage, 0, 0, 2, id)
+                        imagescale(skinsImages.catHov, skinsConf.scale[1], skinsConf.scale[2])
+                    end
+                    local cat = skinsConf.categories[tonumber(skins.hover:sub(4))]
+                    local x = cat.box[1] + (cat.box[3] - cat.box[1]) / 2
+                    local y = cat.box[2] + (cat.box[4] - cat.box[2]) / 2
+                    imagepos(skinsImages.catHov, x, y, 0)
+                    imagealpha(skinsImages.catHov, 0.1)
+                elseif skins.hover:sub(1, 3) ~= 'cat' and br.player[id].ui.lastInfo.hover:sub(1, 3) == 'cat' then
+                    if skinsImages.catHov then
+                        imagealpha(skinsImages.catHov, 0)
+                    end
+                end
+
+                if skins.hover == 'exit' and br.player[id].ui.lastInfo.hover ~= skins.hover then
+                    if not skinsImages.exitHov then
+                        skinsImages.exitHov = image(br.config.hoverExitImage, 0, 0, 2, id)
+                        imagescale(skinsImages.exitHov, skinsConf.scale[1], skinsConf.scale[2])
+                    end
+                    local exit = skinsConf.exit
+                    local x = exit.box[1] + (exit.box[3] - exit.box[1]) / 2
+                    local y = exit.box[2] + (exit.box[4] - exit.box[2]) / 2
+                    imagepos(skinsImages.exitHov, x, y, 0)
+                    imagealpha(skinsImages.exitHov, 0.1)
+                elseif skins.hover ~= 'exit' and br.player[id].ui.lastInfo.hover == 'exit' then
+                    if skinsImages.exitHov then
+                        imagealpha(skinsImages.exitHov, 0)
+                    end
                 end
             end
 
@@ -762,7 +889,10 @@ return
                 armor   = player(id, 'armor'),
                 exp     = br.player[id].storedData.exp,
                 stamina = br.player[id].stamina,
-                skins   = br.player[id].ui.skins.opened
+                skins   = br.player[id].ui.skins.opened,
+                hover   = br.player[id].ui.skins.hover,
+                cat     = br.player[id].ui.skins.cat,
+                page    = br.player[id].ui.skins.page
             }
         end,
 
@@ -840,7 +970,12 @@ return
                     images = {},
                     texts  = {},
                     skins  = {
-                        opened = false
+                        opened = false,
+                        hover  = 'none',
+                        cat    = 1,
+                        page   = 1,
+                        images = {},
+                        texts  = {}
                     }
                 },
             }
@@ -849,7 +984,8 @@ return
         getStoredDataSchema = function()
             return {
                 exp  = 0,
-                aura = 0
+                aura = 0,
+                gold = 0
             }
         end,
 
@@ -882,21 +1018,6 @@ return
                 file:write('return ' .. br.funcs.table.toString(br.player[id].storedData))
                 file:close()
             end
-        end,
-
-        proxyTable = function(moduleName)
-            return setmetatable({}, {
-                __index = function(tbl, key)
-                    if key >= 1 and key <= 32 then
-                        br.player[key].moduleData[moduleName] = br.player[key].moduleData[moduleName] or {}
-                        return br.player[key].moduleData[moduleName]
-                    end
-                end,
-
-                __newindex = function(tbl, key, value)
-                    rawset(br.player[key].moduleData[moduleName], key, value)
-                end
-            })
         end
     },
 

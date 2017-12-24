@@ -1,4 +1,4 @@
-return 
+return
 
 {
     ['sv_gamemode']     = 1,

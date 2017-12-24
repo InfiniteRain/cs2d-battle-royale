@@ -6,7 +6,7 @@ br = {
     packages         = {},
     gracePeriodTimer = 0,
     roundEnded       = false,
-    
+
     gpTimerFrame     = -1,
     gpTimerFont      = false,
 
@@ -26,6 +26,7 @@ end
 
 addbind('space')
 addbind('escape')
+addbind('mouse1')
 
 for setting, values in pairs(br.settings) do
     local vals = (type(values) ~= 'table' and {values} or values)
@@ -41,10 +42,10 @@ for pattern, conf in pairs(br.config.maps) do
         for _, train in pairs(conf.trains or {}) do
             local angle = br.funcs.geometry.getAngle(
                 train.start[1],
-                train.start[2], 
+                train.start[2],
                 train.finish[1],
                 train.finish[2]
-            ) 
+            )
 
             table.insert(br.trains, {
                 image = false,
