@@ -1,4 +1,4 @@
-return 
+return
 
 {
     join = function(id)
@@ -6,7 +6,6 @@ return
         br.funcs.player.loadStoredData(id)
         br.funcs.timer.init(1000, br.funcs.player.updateHud, id)
         br.funcs.player.updateAura(id)
-        br.funcs.game.updateGlobalHudTexts()
 
         br.player[id].newMenu = function(...)
             return br.menu.new(id, ...)
@@ -29,7 +28,6 @@ return
     leave = function(id)
         br.funcs.player.saveStoredData(id)
         br.player[id] = br.funcs.player.getDataSchema()
-        br.funcs.game.updateGlobalHudTexts()
         br.funcs.game.checkIfEnded()
     end,
 
@@ -58,15 +56,16 @@ return
             end
         elseif player(id, 'team') > 0 and team == 0 then
             br.player[id].inGame = false
+            br.player[id].killed = true
         end
     end,
-    
+
     startround_prespawn = function()
         br.roundEnded = false
-        
+
         for _, pl in pairs(player(0, 'table')) do
             if br.player[pl].inGame then
-                br.player[pl].killed = false        
+                br.player[pl].killed = false
             end
         end
     end,
@@ -79,18 +78,18 @@ return
         br.packages = {}
         for name, package in pairs(br.config.packages) do
             for i = 1, package.spawns do
-                local spawnx, spawny 
-                repeat 
+                local spawnx, spawny
+                repeat
                     spawnx = math.random(0, map 'xsize')
                     spawny = math.random(0, map 'ysize')
                 until br.funcs.game.checkIfSpawnable(spawnx, spawny)
-                
+
                 local newPackage = {
                     x      = spawnx,
                     y      = spawny,
                     type   = name,
                     image  = image(package.image, 0, 0, 0),
-                    config = package 
+                    config = package
                 }
 
                 imagepos(newPackage.image, spawnx * 32 + 16, spawny * 32 + 16, math.random(-180, 180))
@@ -127,19 +126,20 @@ return
             if br.player[pl].inGame then
                 br.player[pl].killed = false
                 br.player[pl].spawnPosition = false
-                br.player[pl].stamina = 100
                 br.player[pl].auraImage = false
-                br.player[pl].ui.lastInfo = false
-            
-                for key, _ in pairs(br.player[pl].ui.images) do
-                    br.player[pl].ui.images[key] = false
-                end
 
                 br.funcs.player.randomSpawn(pl)
-                br.funcs.player.updateHud(pl)
                 br.funcs.player.updateAura(pl)
             end
 
+            br.player[pl].stamina = 100
+
+            br.player[pl].ui.lastInfo = false
+            for key, _ in pairs(br.player[pl].ui.images) do
+                br.player[pl].ui.images[key] = false
+            end
+
+            br.funcs.player.updateHud(pl)
             br.funcs.player.saveStoredData(pl)
         end
 
@@ -153,14 +153,14 @@ return
 
             br.funcs.timer.init(train.config.cycle * 1000, br.funcs.train.launch, train)
         end
-
-        br.funcs.game.updateGlobalHudTexts()
     end,
 
     die = function(victim, killer)
-        if br.gracePeriodTimer > 0 then 
+        if br.gracePeriodTimer > 0 then
             br.player[victim].ui.lastInfo = false
-            br.funcs.timer.init(10, br.funcs.player.randomSpawn, victim)
+            if br.player[victim].inGame then
+                br.funcs.timer.init(10, br.funcs.player.randomSpawn, victim)
+            end
         else
             br.player[victim].killed = true
             if killer > 0 and killer ~= victim then
@@ -169,10 +169,10 @@ return
             end
 
             parse('sv_sound "' .. br.config.killSoundFile .. '"')
-            br.funcs.player.updateHud(victim)
             br.funcs.game.checkIfEnded()
-            br.funcs.game.updateGlobalHudTexts()
         end
+
+        br.funcs.player.updateHud(victim)
     end,
 
     second = function()
@@ -200,12 +200,10 @@ return
             end
         end
 
-        br.funcs.game.updateGlobalHudTexts()
-
         if br.safeZone then
             for _, pl in pairs(player(0, 'tableliving')) do
                 local x, y, health = player(pl, 'x'), player(pl, 'y'), player(pl, 'health')
-                if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y) 
+                if br.funcs.geometry.distance(x, y, br.safeZone.x, br.safeZone.y)
                     > br.funcs.geometry.getZoneRadius(br.safeZone) then
                     parse('explosion ' .. x .. ' ' .. y .. ' 3 0')
                     if health - br.config.dangerAreaDamage > 0 then
@@ -237,9 +235,9 @@ return
                 end
             end
         end
-        
+
         if br.gracePeriodTimer > 0 then return end
-        
+
         if not br.shrinkStarted and br.safeZone then
             br.shrinkStarted = true
             br.funcs.geometry.shrinkZone(br.safeZone, br.config.finalAreaRadius * 32, br.config.areaShrinkingSpeed)
@@ -260,15 +258,15 @@ return
         for key, package in pairs(br.packages) do
             local px = package.x
             local py = package.y
-            
+
             if x >= px - 1 and y >= py - 1 and x <= px + 1 and y <= py + 1 then
                 local item = package.config.items[math.random(1, #package.config.items)]
-                parse('effect "colorsmoke" ' .. px * 32 + 16 .. ' ' .. py * 32 + 16 .. ' 4 16 ' 
+                parse('effect "colorsmoke" ' .. px * 32 + 16 .. ' ' .. py * 32 + 16 .. ' 4 16 '
                         .. table.concat(package.config.effectColor, ' '))
                 parse('spawnitem ' .. item .. ' ' .. px .. ' ' .. py)
                 freeimage(package.image)
                 br.packages[key] = nil
-                
+
                 local text = string.char(169) .. '090090255Item(s) found: ' .. itemtype(item, 'name')
                 local extraitem
                 if math.random(1, 100) / 100 <= package.config.extraItemChance then
@@ -281,7 +279,7 @@ return
                             end
                         end
                     end
-                    
+
                     local sx, sy = px, py
                     if countWalkable > 2 then
                         repeat
@@ -290,7 +288,7 @@ return
                         until not (sx == 0 and sy == 0) and tile(px + sx, py + sy, 'walkable')
                     end
 
-                    parse('effect "colorsmoke" ' .. (px + sx) * 32 + 16 .. ' ' .. (py + sy) * 32 + 16 .. ' 4 16 ' 
+                    parse('effect "colorsmoke" ' .. (px + sx) * 32 + 16 .. ' ' .. (py + sy) * 32 + 16 .. ' 4 16 '
                             .. table.concat(package.config.effectColor, ' '))
                     parse('spawnitem ' .. extraitem .. ' ' .. px + sx .. ' ' .. py + sy)
                     text = text .. ' and ' .. itemtype(extraitem, 'name')
@@ -308,7 +306,7 @@ return
         if br.gracePeriodTimer > 0 then
             if source > 0 then
                 msg2(source, string.char(169) .. '255000000You cannot deal damage during the grace period!@C')
-            end 
+            end
 
             return 1
         else
@@ -341,13 +339,17 @@ return
             end
 
             if aura ~= 0 then
-                menuString = menuString .. ',No aura' 
+                menuString = menuString .. ',No aura'
             else
                 menuString = menuString .. ',(No aura)'
             end
 
             menu(id, menuString)
+        elseif action == 2 then
+            br.player[id].ui.skins.opened = not br.player[id].ui.skins.opened
         end
+
+        br.funcs.player.updateHud(id)
     end,
 
     menu = function(id, menu, button)
@@ -376,7 +378,7 @@ return
                         msg2(id, c .. r .. 'You are not allowed to use this command.')
                         return 1
                     end
-                    
+
                     table.remove(segments, 1)
                     local success, emsg = pcall(v.func, id, role, segments)
                     if not success then
@@ -391,12 +393,12 @@ return
             msg2(id, c .. r .. 'Unknown command "' .. segments[1]:sub(2) .. '".')
         else
             --[[
-            local g, y, sc, name, health, tag, message = 
-                '000255000', 
-                '255220000',  
-                string.format('%03d%03d%03d', unpack(role.color)), 
-                player(id, 'name'), 
-                player(id, 'health'), 
+            local g, y, sc, name, health, tag, message =
+                '000255000',
+                '255220000',
+                string.format('%03d%03d%03d', unpack(role.color)),
+                player(id, 'name'),
+                player(id, 'health'),
                 role.tag,
                 ((message:sub(-2) == '@C' and not role.allowAtC) and message:sub(1, -3) or message)
             local newMsg = c .. g .. name .. (tag and c .. sc .. ' [' .. tag .. ']' or '')
@@ -418,7 +420,7 @@ return
 
     projectile = function(id, weapon, x, y)
         if weapon == 86 then
-            parse('spawnnpc 3 ' .. (x / 32) .. ' ' .. (y / 32) .. ' 0') 
+            parse('spawnnpc 3 ' .. (x / 32) .. ' ' .. (y / 32) .. ' 0')
             return 1
         end
     end,
@@ -440,10 +442,11 @@ return
                 br.player[id].sprinting = false
                 parse('speedmod ' .. id .. ' 0')
             end
-        end
-
-        if key == 'H' and state == 1 then
-            msg2(id, string.char(169) .. '255000000Cosmetics are coming soon!')
+        elseif key == 'escape' then
+            if br.player[id].ui.skins.opened then
+                br.player[id].ui.skins.opened = false
+                br.funcs.player.updateHud(id)
+            end
         end
     end,
 

@@ -11,6 +11,7 @@ return
     fontImage           = 'gfx/br/fn2.png',
     killSoundFile       = 'br/ds.ogg',
     auraImage           = 'gfx/sprites/flare4.bmp',
+    skinsMenuImage      = 'gfx/br/sm.png',
 
     ui = {
         expBarImage         = 'gfx/br/xb.png',
@@ -136,6 +137,7 @@ return
         'gfx/br/bb.png',
         'gfx/br/eb.png',
         'gfx/br/t2.png',
+        'gfx/br/sm.png',
         
         'sfx/br/ds.ogg'
     },
